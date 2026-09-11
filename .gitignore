@@ -1,5 +1,9 @@
 data/
+kit.json
+.lab/
 tracking/out/
+tracking/config/*.json
+tracking/journeys.jsonl
 lab/seed.json
 session/
 __pycache__/

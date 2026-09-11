@@ -1,0 +1,14 @@
+{
+  "_instructions": "TEMPLATE — replace every placeholder, then delete this key. allocation must sum exactly to data/econ.json budget_inr; expected must follow from YOUR allocation via the marginal CPL bands (candidate/02_PART2_GROWTH_AI.md, Section E); kill_rules must be a non-empty list of {metric, threshold, window_days, action}.",
+  "allocation": {"meta": null, "google": null, "influencer": null},
+  "expected": {"leads": null, "walkins": null, "members": null, "blended_cac": null},
+  "kill_rules": [
+    {
+      "metric": "<REPLACE — the metric you watch>",
+      "threshold": null,
+      "window_days": null,
+      "action": "<REPLACE — kill|pause|scale|keep|fix|investigate>"
+    }
+  ],
+  "assumptions": ["<REPLACE — what must hold for this plan to deliver>"]
+}

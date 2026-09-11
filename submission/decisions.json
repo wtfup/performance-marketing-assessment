@@ -1,0 +1,15 @@
+{
+  "_instructions": "TEMPLATE — replace the example entry with one entry per issue you find in data/exports/, then delete this key and the placeholder text. action must be one of kill|pause|scale|keep|fix|investigate; evidence_numbers must carry the actual export numbers that justify the action. See candidate/02_PART2_GROWTH_AI.md, Section D.",
+  "decisions": [
+    {
+      "entity": "<REPLACE — the campaign / adset / ad / placement this decision is about>",
+      "campaign": "",
+      "adset": "",
+      "ad": "",
+      "action": "investigate",
+      "evidence_numbers": {"_replace": "the export numbers that justify this action"},
+      "expected_impact_inr": null,
+      "why": "<REPLACE — one paragraph tying the action to the numbers>"
+    }
+  ]
+}

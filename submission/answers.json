@@ -1,0 +1,45 @@
+{
+  "_instructions": "TEMPLATE — replace every null and placeholder with your computed values, then delete this key. Definitions: candidate/01_PART1_OPERATOR.md, Section B. Include one per_campaign entry per campaign in the account. Extra keys (gross_revenue, organic_leads, ...) are welcome.",
+  "candidate_id": "<your candidate_id from kit.json>",
+  "window": {"start": "<YYYY-MM-DD from kit.json>", "end": "<YYYY-MM-DD from kit.json>"},
+  "totals": {
+    "meta_spend": null,
+    "google_spend": null,
+    "platform_meta_leads": null,
+    "platform_google_leads": null,
+    "crm_leads_raw": null,
+    "crm_leads_clean": null,
+    "paid_leads": null,
+    "paid_walkins": null,
+    "paid_members": null,
+    "net_revenue": null
+  },
+  "metrics": {
+    "meta_cpl": null,
+    "google_cpl": null,
+    "blended_cpl": null,
+    "cost_per_walkin": null,
+    "cac": null,
+    "roas_net": null
+  },
+  "per_campaign": [
+    {
+      "campaign_id": "<replace — one entry per campaign>",
+      "spend": null,
+      "clean_leads": null,
+      "cpl": null,
+      "walkins": null,
+      "cost_per_walkin": null
+    }
+  ],
+  "data_issues": {
+    "duplicate_rows_removed": null,
+    "test_rows_excluded": null,
+    "invalid_phone_rows_excluded": null,
+    "leads_created_after_window_end": null,
+    "refunded_members_count": null,
+    "refund_amount_inr": null,
+    "members_with_no_attributed_lead": null,
+    "platform_vs_crm_lead_gap": null
+  }
+}
