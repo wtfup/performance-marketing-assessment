@@ -1,4 +1,6 @@
-# Station contract (v2 — STANDALONE / browser-only). Supersedes v1 entirely.
+# Station design notes (v2 — STANDALONE / browser-only)
+
+_This is the contract the station files were built against. It is not candidate-facing._
 
 **The candidate is a performance marketer, not a developer.** No server, no python, no terminal, no
 install. Each station is ONE self-contained HTML file that works by double-clicking it (file://).
