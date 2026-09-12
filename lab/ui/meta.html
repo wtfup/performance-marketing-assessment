@@ -1,0 +1,1631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meta Ads Manager — lab</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #f0f2f5; color: #1c1e21;
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; cursor: pointer; }
+  a { color: #1877f2; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .muted { color: #65676b; }
+  .small { font-size: 12px; }
+
+  .btn {
+    background: #fff; border: 1px solid #ccd0d5; border-radius: 8px;
+    padding: 6px 12px; color: #1c1e21; white-space: nowrap;
+  }
+  .btn:hover { background: #f5f6f7; }
+  .btn.primary { background: #1877f2; border-color: #1877f2; color: #fff; }
+  .btn.primary:hover { background: #166fe5; }
+  .btn.danger { background: #fff; border-color: #e4b3ad; color: #b42318; }
+  .btn.danger:hover { background: #fdecea; }
+  .btn.danger.armed { background: #b42318; border-color: #b42318; color: #fff; }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* ---------- sticky banner ---------- */
+  #banner {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px;
+    background: #fff; border-bottom: 1px solid #dddfe2;
+    padding: 10px 16px;
+  }
+  #banner .brand { font-weight: 700; font-size: 15px; white-space: nowrap; }
+  #banner .brand .lab {
+    font-weight: 400; font-size: 11px; color: #65676b;
+    border: 1px solid #dddfe2; border-radius: 10px; padding: 1px 7px; margin-left: 7px;
+    vertical-align: 2px;
+  }
+  #banner .bitems { display: flex; flex-wrap: wrap; gap: 6px 18px; flex: 1; min-width: 240px; }
+  .bitem { font-size: 13px; color: #65676b; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bitem b { color: #1c1e21; font-weight: 600; }
+  .bitem.good b { color: #1a7f37; }
+  .bitem.bad b { color: #b42318; }
+  .bitem.warn b { color: #9a6700; }
+  #banner .actions { display: flex; gap: 8px; }
+
+  /* ---------- error banner / flash ---------- */
+  #error-banner {
+    background: #fdecea; border-bottom: 1px solid #f3c6c0; color: #b42318;
+    padding: 8px 16px; font-size: 13px;
+  }
+  #error-banner .er { display: flex; gap: 8px; align-items: baseline; padding: 1px 0; }
+  #error-banner .er code { font-family: ui-monospace, Menlo, Consolas, monospace; word-break: break-all; }
+  #error-banner button { background: none; border: 0; color: #b42318; text-decoration: underline; margin-left: auto; }
+  #flash { padding: 8px 16px; font-size: 13px; border-bottom: 1px solid transparent; }
+  #flash.ok { background: #e8f5ec; border-color: #c3e6cf; color: #1a7f37; }
+  #flash.warn { background: #fff8e1; border-color: #f0e0a8; color: #9a6700; }
+  #flash.err { background: #fdecea; border-color: #f3c6c0; color: #b42318; }
+  #flash ul { margin: 4px 0 0 18px; padding: 0; }
+
+  /* ---------- layout ---------- */
+  #body { display: flex; align-items: stretch; min-height: calc(100vh - 58px); }
+  #nav {
+    width: 190px; flex: 0 0 190px; background: #fff; border-right: 1px solid #dddfe2;
+    padding: 12px 8px; display: flex; flex-direction: column; gap: 2px;
+  }
+  #nav button {
+    display: block; width: 100%; text-align: left; border: 0; background: none;
+    border-radius: 8px; padding: 9px 12px; color: #1c1e21; font-size: 14px;
+  }
+  #nav button:hover { background: #f0f2f5; }
+  #nav button.active { background: #e7f3ff; color: #1877f2; font-weight: 600; }
+  #nav .nav-note { margin-top: 14px; padding: 8px 12px; font-size: 11.5px; color: #65676b; line-height: 1.4; border-top: 1px solid #e4e6eb; }
+
+  #main { flex: 1; min-width: 0; padding: 18px 22px 64px; }
+  body.activity-open #main { padding-bottom: 300px; }
+  .view-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 4px; }
+  .view-head h1 { font-size: 20px; margin: 0; }
+  .view-sub { color: #65676b; font-size: 13px; margin: 0 0 14px; max-width: 860px; }
+
+  .card {
+    background: #fff; border: 1px solid #dddfe2; border-radius: 10px;
+    padding: 14px 16px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 10px; }
+  .card .card-note { color: #65676b; font-size: 12.5px; margin: -4px 0 10px; max-width: 860px; }
+
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; font-weight: 600; color: #65676b; font-size: 12px;
+    padding: 7px 10px; border-bottom: 1px solid #dddfe2; white-space: nowrap;
+  }
+  td { padding: 9px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr.clickable { cursor: pointer; }
+  tbody tr.clickable:hover { background: #f7f8fa; }
+
+  .badge {
+    display: inline-block; border-radius: 10px; padding: 1px 8px; font-size: 11.5px;
+    background: #e4e6eb; color: #4b4f56; white-space: nowrap;
+  }
+  .badge.blue { background: #e7f3ff; color: #1877f2; }
+  .badge.green { background: #e8f5ec; color: #1a7f37; }
+  .badge.red { background: #fdecea; color: #b42318; }
+  .badge.amber { background: #fff8e1; color: #9a6700; }
+  .badge.grey { background: #e4e6eb; color: #4b4f56; }
+
+  .ellip { display: inline-block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+
+  .empty { padding: 30px 18px; text-align: center; color: #65676b; }
+  .empty b { color: #1c1e21; display: block; margin-bottom: 4px; }
+
+  .kv { display: grid; grid-template-columns: 190px 1fr; gap: 6px 14px; font-size: 13px; }
+  .kv dt { color: #65676b; }
+  .kv dd { margin: 0; }
+
+  .restricted-row {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    border: 1px dashed #dddfe2; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+    background: #fafbfc;
+  }
+  .restricted-row .rname { font-weight: 600; }
+  .restricted-row .rdesc { color: #65676b; font-size: 12.5px; flex: 1; min-width: 220px; }
+  .restricted-row .btn[disabled] { cursor: not-allowed; }
+
+  .stat-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .stat { background: #fff; border: 1px solid #dddfe2; border-radius: 10px; padding: 10px 14px; min-width: 150px; }
+  .stat .n { font-size: 20px; font-weight: 700; }
+  .stat .l { color: #65676b; font-size: 12px; }
+
+  /* ---------- drawer ---------- */
+  #drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 40; }
+  #drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 560px; max-width: 94vw;
+    background: #fff; z-index: 50; display: flex; flex-direction: column;
+    box-shadow: -8px 0 24px rgba(0,0,0,.14);
+  }
+  .drawer-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px; border-bottom: 1px solid #dddfe2;
+  }
+  .drawer-head h2 { font-size: 16px; margin: 0; }
+  .drawer-head .spacer { flex: 1; }
+  .drawer-head .icon-btn { border: 0; background: none; font-size: 18px; color: #65676b; padding: 2px 6px; border-radius: 6px; }
+  .drawer-head .icon-btn:hover { background: #f0f2f5; }
+  .drawer-body { flex: 1; overflow: auto; padding: 14px 18px 20px; }
+  .drawer-foot {
+    display: flex; gap: 8px; align-items: center;
+    padding: 12px 18px; border-top: 1px solid #dddfe2; background: #fafbfc;
+  }
+  .drawer-foot .spacer { flex: 1; }
+  #drawer-top-errors { margin: 0 0 12px; }
+  .apply-error {
+    background: #fdecea; border: 1px solid #f3c6c0; color: #b42318; border-radius: 8px;
+    padding: 8px 10px; font-size: 12.5px; margin-bottom: 10px;
+  }
+  .apply-error ul { margin: 4px 0 0 16px; padding: 0; }
+
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: #65676b; margin-bottom: 4px; }
+  .field input[type=text], .field input[type=number], .field select, .field textarea {
+    width: 100%; border: 1px solid #ccd0d5; border-radius: 8px; padding: 7px 9px;
+    font: inherit; font-size: 13px; color: #1c1e21; background: #fff;
+  }
+  .field textarea { min-height: 90px; resize: vertical; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid #a8c7fa; outline-offset: 0; border-color: #1877f2; }
+  .counter { font-size: 11.5px; color: #65676b; margin-top: 3px; }
+  .counter.warn { color: #9a6700; font-weight: 600; }
+  .counter.err { color: #b42318; font-weight: 600; }
+  .field-msg { font-size: 12px; margin-top: 4px; }
+  .field-msg.warn { color: #9a6700; }
+  .field-msg.err { color: #b42318; }
+  .hint { font-size: 12px; color: #65676b; margin-top: 3px; }
+
+  .fieldset { border: 1px solid #dddfe2; border-radius: 8px; padding: 10px 12px 4px; margin: 0 0 14px; }
+  .fieldset > legend { font-size: 12px; font-weight: 700; color: #65676b; padding: 0 4px; }
+  .fieldset .fieldset-msg { font-size: 12px; margin: 4px 0 6px; }
+  .fieldset .fieldset-msg.err { color: #b42318; }
+
+  .chips-box {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    border: 1px solid #ccd0d5; border-radius: 8px; padding: 6px; background: #fff;
+  }
+  .chips-box input { border: 0 !important; outline: 0 !important; box-shadow: none !important; flex: 1; min-width: 130px; padding: 3px 2px !important; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #e7f3ff; color: #166fe5; border-radius: 12px; padding: 2px 8px; font-size: 12px;
+  }
+  .chip button { border: 0; background: none; color: #166fe5; padding: 0 0 0 2px; font-size: 13px; line-height: 1; }
+  .chip button:hover { color: #b42318; }
+
+  .check-field .check { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: #1c1e21; }
+  .check-field .check input { margin: 0; }
+  .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px 12px; padding: 2px 0 6px; }
+  .check-grid label { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #1c1e21; font-weight: 400; }
+
+  /* ---------- activity ---------- */
+  #activity {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 35;
+    background: #fff; border-top: 1px solid #dddfe2; box-shadow: 0 -2px 10px rgba(0,0,0,.06);
+  }
+  #activity .act-head { display: flex; align-items: center; gap: 12px; padding: 7px 14px; }
+  #activity .act-head .toggle {
+    border: 0; background: none; font-weight: 700; font-size: 13px; padding: 2px 0; color: #1c1e21;
+  }
+  #activity .act-body { display: none; max-height: 250px; overflow: auto; border-top: 1px solid #e4e6eb; }
+  body.activity-open #activity .act-body { display: block; }
+  #activity table { font-size: 12px; }
+  #activity td, #activity th { padding: 5px 10px; }
+  #activity tr.restricted td, #activity tr.failed td { background: #fdecea; }
+  #activity tr.restricted td { color: #b42318; }
+
+  @media (max-width: 1120px) {
+    #nav { width: 168px; flex-basis: 168px; }
+    #main { padding: 14px 14px 64px; }
+    #drawer { width: 480px; }
+  }
+</style>
+</head>
+<body>
+
+<header id="banner">
+  <div class="brand">Meta Ads Manager<span class="lab">lab</span></div>
+  <div class="bitems">
+    <span class="bitem" id="b-account">Account: <b>…</b></span>
+    <span class="bitem" id="b-brief">Brief: <b>…</b></span>
+    <span class="bitem" id="b-validate">Validation: <b>—</b></span>
+  </div>
+  <div class="actions">
+    <button class="btn" id="btn-refresh" type="button">Refresh</button>
+    <button class="btn primary" id="btn-validate" type="button">Validate</button>
+  </div>
+</header>
+
+<div id="error-banner" hidden></div>
+<div id="flash" hidden></div>
+
+<div id="body">
+  <nav id="nav" aria-label="Views"></nav>
+  <main id="main"></main>
+</div>
+
+<section id="activity" aria-label="Activity log">
+  <div class="act-head">
+    <button class="toggle" id="activity-toggle" type="button">Activity ▸</button>
+    <span class="muted small" id="activity-count"></span>
+    <span class="muted small">/api/log?limit=100 · newest last</span>
+  </div>
+  <div class="act-body">
+    <div class="tbl-wrap" id="activity-table"></div>
+  </div>
+</section>
+
+<div id="drawer-backdrop" hidden></div>
+<aside id="drawer" role="dialog" aria-modal="true" hidden></aside>
+
+<script>
+'use strict';
+(function () {
+
+  /* ------------------------------------------------------------------ *
+   * tiny DOM helpers
+   * ------------------------------------------------------------------ */
+  function $(sel, root) { return (root || document).querySelector(sel); }
+
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function (k) {
+        var v = attrs[k];
+        if (v == null || v === false) return;
+        if (k === 'class') n.className = v;
+        else if (k === 'text') n.textContent = v;
+        else if (k.indexOf('on') === 0) n.addEventListener(k.slice(2), v);
+        else if (v === true) n.setAttribute(k, '');
+        else n.setAttribute(k, String(v));
+      });
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var kids = arguments[i];
+      if (kids == null || kids === false) continue;
+      (Array.isArray(kids) ? kids : [kids]).forEach(function (kid) {
+        if (kid == null || kid === false) return;
+        n.appendChild(typeof kid === 'string' ? document.createTextNode(kid) : kid);
+      });
+    }
+    return n;
+  }
+
+  function clearNode(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+  function dget(obj, path) {
+    return path.split('.').reduce(function (o, k) { return (o == null ? undefined : o[k]); }, obj);
+  }
+  function dset(obj, path, val) {
+    var parts = path.split('.');
+    var o = obj;
+    for (var i = 0; i < parts.length - 1; i++) {
+      if (typeof o[parts[i]] !== 'object' || o[parts[i]] === null) o[parts[i]] = {};
+      o = o[parts[i]];
+    }
+    o[parts[parts.length - 1]] = val;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * api client — all requests are relative, served by the lab portal
+   * ------------------------------------------------------------------ */
+  function ApiError(url, status, detail) {
+    this.url = url; this.status = status; this.detail = detail;
+    this.message = (status ? 'HTTP ' + status : 'request failed') + ' — ' + url;
+  }
+
+  function request(method, path, body) {
+    var opts = { method: method, cache: 'no-store' };
+    if (body !== undefined) {
+      opts.headers = { 'Content-Type': 'application/json' };
+      opts.body = JSON.stringify(body);
+    }
+    return fetch(path, opts).then(function (res) {
+      return res.text().then(function (txt) {
+        var data = null;
+        try { data = txt ? JSON.parse(txt) : null; } catch (e) { data = null; }
+        if (!res.ok) throw new ApiError(path, res.status, data && (data.detail || data.error) || res.statusText);
+        return data;
+      });
+    }, function (e) {
+      throw new ApiError(path, 0, (e && e.message) ? e.message : 'network unreachable');
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * app state
+   * ------------------------------------------------------------------ */
+  var PLATFORM = 'meta';
+
+  var app = {
+    state: null,        // GET /api/state?platform=meta
+    brief: null,        // GET /api/brief?platform=meta
+    validate: null,     // GET /api/validate?platform=meta
+    log: [],            // GET /api/log?limit=100
+    view: 'campaigns',
+    fetchErrors: {},    // url -> message
+    drawer: { open: false, entity: null, id: null, mode: null, draft: null, els: {}, row: null }
+  };
+
+  var ENTITIES = {
+    campaign: { api: 'campaign', label: 'Campaign', view: 'campaigns' },
+    adset:    { api: 'adset',    label: 'Ad set',  view: 'adsets' },
+    ad:       { api: 'ad',       label: 'Ad',      view: 'ads' }
+  };
+
+  var VIEWS = [
+    { id: 'campaigns', label: 'Campaigns' },
+    { id: 'adsets',    label: 'Ad sets' },
+    { id: 'ads',       label: 'Ads' },
+    { id: 'audiences', label: 'Audiences' },
+    { id: 'events',    label: 'Events' },
+    { id: 'account',   label: 'Account' }
+  ];
+
+  // Suggestion lists for the edit forms. They are form conveniences only —
+  // nothing on screen is ever populated from these; every rendered value
+  // comes from the portal API.
+  var SUG = {
+    objective: ['OUTCOME_LEADS', 'OUTCOME_TRAFFIC', 'OUTCOME_ENGAGEMENT', 'OUTCOME_AWARENESS', 'OUTCOME_SALES', 'OUTCOME_APP_PROMOTION'],
+    buying_type: ['AUCTION', 'RESERVED'],
+    budget_optimization: ['campaign', 'ad_set'],
+    bid_strategy: ['LOWEST_COST_WITHOUT_CAP', 'LOWEST_COST_WITH_BID_CAP', 'COST_CAP', 'LOWEST_COST_WITH_MIN_ROAS'],
+    status: ['ACTIVE', 'PAUSED'],
+    optimization_goal: ['OFFSITE_CONVERSIONS', 'LEAD_GENERATION', 'QUALITY_LEAD', 'LINK_CLICKS', 'LANDING_PAGE_VIEWS', 'IMPRESSIONS', 'REACH', 'POST_ENGAGEMENT', 'VALUE'],
+    billing_event: ['IMPRESSIONS', 'LINK_CLICKS', 'POST_ENGAGEMENT', 'THRUPLAY'],
+    attribution_setting: ['7d_click', '1d_click', '1d_view', '7d_click,1d_view'],
+    format: ['SINGLE_IMAGE', 'SINGLE_VIDEO', 'CAROUSEL', 'COLLECTION'],
+    cta: ['LEARN_MORE', 'SHOP_NOW', 'SIGN_UP', 'BOOK_NOW', 'CONTACT_US', 'GET_OFFER', 'SUBSCRIBE', 'DOWNLOAD', 'SEND_MESSAGE', 'WHATSAPP_MESSAGE', 'CALL_NOW'],
+    gender: ['male', 'female'],
+    platform: ['facebook', 'instagram', 'messenger', 'audience_network', 'threads', 'whatsapp']
+  };
+
+  /* ------------------------------------------------------------------ *
+   * value helpers
+   * ------------------------------------------------------------------ */
+  function disp(v) {
+    if (v === true) return 'yes';
+    if (v === false) return 'no';
+    if (v == null || v === '') return '—';
+    if (typeof v === 'object') return objLabel(v);
+    return String(v);
+  }
+  function objLabel(o) {
+    if (o.name != null) return String(o.name);
+    if (o.id != null) return String(o.id);
+    return Object.keys(o).map(function (k) { return k + '=' + o[k]; }).join(' ');
+  }
+  function fmtMoney(v) {
+    if (v == null || v === '') return '—';
+    var n = Number(v);
+    if (!isFinite(n)) return String(v);
+    var cur = accountProp('currency');
+    return n.toLocaleString(undefined, { maximumFractionDigits: 2 }) + (cur ? ' ' + cur : '');
+  }
+  function accountProp(k) {
+    var a = app.state && app.state.account;
+    return (a && a[k] != null && a[k] !== '') ? a[k] : null;
+  }
+  function esc1(v) { return v == null ? '—' : String(v); }
+
+  function statusBadge(v) {
+    if (v == null || v === '') return el('span', { class: 'muted', text: '—' });
+    var s = String(v).toLowerCase();
+    var cls = 'badge';
+    if (/^(active|enabled|on)$/.test(s)) cls = 'badge green';
+    else if (/^(paused|inactive|disabled|off)$/.test(s)) cls = 'badge grey';
+    return el('span', { class: cls, text: String(v) });
+  }
+
+  function budgetOptBadge(v) {
+    if (v == null || v === '') return el('span', { class: 'muted', text: '—' });
+    var s = String(v).toLowerCase();
+    if (s === 'campaign' || s === 'cbo' || s.indexOf('campaign_budget') >= 0) {
+      return el('span', { class: 'badge blue', text: 'CBO · ' + v });
+    }
+    if (s === 'ad_set' || s === 'adset') {
+      return el('span', { class: 'badge grey', text: 'Ad set · ' + v });
+    }
+    return el('span', { class: 'badge', text: String(v) });
+  }
+
+  function parentLabel(kind, id) {
+    if (id == null || id === '') return el('span', { class: 'muted', text: '—' });
+    var rows = ents(kind);
+    var hit = rows.filter(function (r) { return r.id === id; })[0];
+    return hit && hit.name ? el('span', {}, esc1(hit.name), el('span', { class: 'muted', text: ' · ' + id }))
+                           : el('span', { class: 'mono', text: String(id) });
+  }
+
+  function cellText(v, max) {
+    var t = disp(v);
+    if (max && t.length > max) return el('span', { class: 'ellip', title: t, text: t });
+    return document.createTextNode(t);
+  }
+
+  function ents(kind) {
+    var e = (app.state && app.state.entities) || {};
+    var v = e[kind];
+    return Array.isArray(v) ? v : [];
+  }
+
+  /* ------------------------------------------------------------------ *
+   * error banner + flash strip
+   * ------------------------------------------------------------------ */
+  function setFetchError(url, message) {
+    app.fetchErrors[url] = message;
+    renderErrorBanner();
+  }
+  function clearFetchError(url) {
+    if (app.fetchErrors[url] != null) { delete app.fetchErrors[url]; renderErrorBanner(); }
+  }
+
+  var scriptErrors = [];
+
+  function renderErrorBanner() {
+    var host = $('#error-banner');
+    var urls = Object.keys(app.fetchErrors);
+    if (!urls.length && !scriptErrors.length) { host.hidden = true; clearNode(host); return; }
+    host.hidden = false;
+    clearNode(host);
+    urls.forEach(function (u) {
+      host.appendChild(el('div', { class: 'er' },
+        el('span', { text: 'Could not load' }),
+        el('code', { text: u }),
+        el('span', { class: 'muted', text: '— ' + app.fetchErrors[u] })
+      ));
+    });
+    scriptErrors.forEach(function (s) {
+      host.appendChild(el('div', { class: 'er' }, el('code', { text: 'script error: ' + s })));
+    });
+    host.appendChild(el('div', {},
+      el('button', { type: 'button', text: 'dismiss', onclick: function () {
+        app.fetchErrors = {}; scriptErrors = []; renderErrorBanner();
+      } })
+    ));
+  }
+
+  var flashTimer = null;
+  function flash(kind, text, details) {
+    var host = $('#flash');
+    clearNode(host);
+    host.hidden = false;
+    host.className = kind;
+    host.appendChild(el('div', { text: text }));
+    if (details && details.length) {
+      host.appendChild(el('ul', {}, details.map(function (d) { return el('li', { text: d }); })));
+    }
+    if (flashTimer) { clearTimeout(flashTimer); flashTimer = null; }
+    if (kind === 'ok') flashTimer = setTimeout(function () { host.hidden = true; }, 6000);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * loaders
+   * ------------------------------------------------------------------ */
+  function loadState() {
+    var url = '/api/state?platform=' + PLATFORM;
+    return request('GET', url).then(function (d) { app.state = d; clearFetchError(url); },
+      function (e) { setFetchError(url, e.detail || e.message); throw e; });
+  }
+  function loadBrief() {
+    var url = '/api/brief?platform=' + PLATFORM;
+    return request('GET', url).then(function (d) { app.brief = d; clearFetchError(url); },
+      function (e) { setFetchError(url, e.detail || e.message); throw e; });
+  }
+  function loadValidate() {
+    var url = '/api/validate?platform=' + PLATFORM;
+    return request('GET', url).then(function (d) { app.validate = d; clearFetchError(url); },
+      function (e) { setFetchError(url, e.detail || e.message); throw e; });
+  }
+  function loadLog() {
+    var url = '/api/log?limit=100';
+    return request('GET', url).then(function (d) { app.log = normalizeLog(d); clearFetchError(url); },
+      function (e) { setFetchError(url, e.detail || e.message); throw e; });
+  }
+  function normalizeLog(d) {
+    if (Array.isArray(d)) return d;
+    if (d && typeof d === 'object') {
+      var keys = ['entries', 'log', 'items', 'rows', 'events'];
+      for (var i = 0; i < keys.length; i++) if (Array.isArray(d[keys[i]])) return d[keys[i]];
+    }
+    return [];
+  }
+
+  function settleAll(promises) {
+    return Promise.all(promises.map(function (p) { return p.catch(function () { return null; }); }));
+  }
+
+  function refreshAll() {
+    return settleAll([loadState(), loadBrief(), loadValidate(), loadLog()]).then(function () {
+      renderBanner(); renderNav(); renderMain(); renderActivity();
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * banner / nav
+   * ------------------------------------------------------------------ */
+  function briefTitle() {
+    var b = app.brief;
+    if (!b || typeof b !== 'object') return null;
+    var cands = [b.title, b.name, b.label, b.heading];
+    if (b.brief && typeof b.brief === 'object') cands.push(b.brief.title, b.brief.name);
+    cands.push(b.id);
+    for (var i = 0; i < cands.length; i++) {
+      if (typeof cands[i] === 'string' && cands[i].trim()) return cands[i].trim();
+    }
+    return null;
+  }
+
+  function validateSummary() {
+    var v = app.validate;
+    if (!v || typeof v !== 'object' || !v.summary) return null;
+    var s = v.summary;
+    var passed = Number(s.passed);
+    var total = Number(s.total);
+    if (!isFinite(total)) {
+      total = (Number(s.passed) || 0) + (Number(s.failed) || 0) + (Number(s.warned) || 0);
+    }
+    if (!isFinite(passed)) passed = 0;
+    return { passed: passed, total: total, failed: Number(s.failed) || 0, warned: Number(s.warned) || 0 };
+  }
+
+  function renderBanner() {
+    var acct = app.state && app.state.account;
+    var aAcc = $('#b-account');
+    clearNode(aAcc);
+    aAcc.appendChild(document.createTextNode('Account: '));
+    aAcc.appendChild(el('b', { text: acct && acct.name ? String(acct.name) : '—' }));
+    if (acct && acct.id) aAcc.title = acct.id;
+
+    var t = briefTitle();
+    var aBrief = $('#b-brief');
+    clearNode(aBrief);
+    aBrief.appendChild(document.createTextNode('Brief: '));
+    aBrief.appendChild(el('b', { text: t || '—' }));
+
+    var sum = validateSummary();
+    var aVal = $('#b-validate');
+    aVal.className = 'bitem';
+    clearNode(aVal);
+    aVal.appendChild(document.createTextNode('Validation: '));
+    if (!sum) {
+      aVal.appendChild(el('b', { text: '—' }));
+    } else {
+      aVal.appendChild(el('b', { text: sum.passed + '/' + sum.total + ' passed' }));
+      aVal.title = sum.failed + ' failed · ' + sum.warned + ' warnings';
+      if (sum.total > 0 && sum.passed === sum.total) aVal.className = 'bitem good';
+      else if (sum.failed > 0) aVal.className = 'bitem bad';
+      else if (sum.warned > 0) aVal.className = 'bitem warn';
+    }
+  }
+
+  function renderNav() {
+    var nav = $('#nav');
+    clearNode(nav);
+    VIEWS.forEach(function (v) {
+      nav.appendChild(el('button', {
+        type: 'button',
+        class: v.id === app.view ? 'active' : '',
+        'data-view': v.id,
+        text: v.label,
+        onclick: function () { go(v.id); }
+      }));
+    });
+    nav.appendChild(el('div', { class: 'nav-note', text: 'State is served and validated by the lab portal. Every accepted change is logged.' }));
+  }
+
+  function go(viewId) {
+    if (location.hash === '#' + viewId) { setView(viewId); }
+    else { location.hash = '#' + viewId; }
+  }
+
+  function setView(viewId) {
+    app.view = viewId;
+    renderNav();
+    renderMain();
+  }
+
+  function handleHash() {
+    var h = (location.hash || '').replace(/^#/, '');
+    var known = VIEWS.some(function (v) { return v.id === h; });
+    setView(known ? h : 'campaigns');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * table builder
+   * ------------------------------------------------------------------ */
+  function makeTable(cols, rows, onRow) {
+    var wrap = el('div', { class: 'tbl-wrap' });
+    var t = el('table');
+    var thead = el('thead');
+    var htr = el('tr');
+    cols.forEach(function (c) { htr.appendChild(el('th', { text: c.label })); });
+    thead.appendChild(htr);
+    t.appendChild(thead);
+    var tb = el('tbody');
+    rows.forEach(function (r) {
+      var tr = el('tr');
+      if (onRow) {
+        tr.className = 'clickable';
+        tr.addEventListener('click', function (ev) {
+          if (ev.target.closest && ev.target.closest('button,a')) return;
+          onRow(r);
+        });
+      }
+      cols.forEach(function (c) {
+        var td = el('td');
+        var v = c.get(r);
+        if (v == null) td.textContent = '—';
+        else if (typeof v === 'string') td.textContent = v;
+        else td.appendChild(v);
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    wrap.appendChild(t);
+    return wrap;
+  }
+
+  function nameCell(row, entity) {
+    var parts = [];
+    if (row.name != null && row.name !== '') parts.push(el('div', {}, esc1(row.name)));
+    else parts.push(el('div', { class: 'muted' }, '(unnamed)'));
+    var meta = el('div', { class: 'muted small mono' }, row.id != null ? String(row.id) : '');
+    if (row.protected === true) meta.appendChild(el('span', { class: 'badge amber', text: 'protected', title: 'Deletes are rejected for this entity' , style: 'margin-left:6px' }));
+    parts.push(meta);
+    return el('div', {}, parts);
+  }
+
+  function emptyState(title, hint) {
+    return el('div', { class: 'empty' }, el('b', { text: title }), el('span', { text: hint }));
+  }
+
+  function viewHead(title, sub, count) {
+    var head = el('div', { class: 'view-head' }, el('h1', { text: title }));
+    if (count != null) head.appendChild(el('span', { class: 'muted', text: '· ' + count }));
+    var frag = document.createDocumentFragment();
+    frag.appendChild(head);
+    if (sub) frag.appendChild(el('p', { class: 'view-sub', text: sub }));
+    return frag;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * views
+   * ------------------------------------------------------------------ */
+  function renderMain() {
+    var main = $('#main');
+    clearNode(main);
+    if (app.view === 'campaigns') viewCampaigns(main);
+    else if (app.view === 'adsets') viewAdsets(main);
+    else if (app.view === 'ads') viewAds(main);
+    else if (app.view === 'audiences') viewAudiences(main);
+    else if (app.view === 'events') viewEvents(main);
+    else viewAccount(main);
+  }
+
+  function stateMissingCard(main, what) {
+    main.appendChild(el('div', { class: 'card' }, el('div', { class: 'empty' },
+      el('b', { text: 'Account state is not loaded' }),
+      el('span', { text: 'Could not load /api/state?platform=' + PLATFORM + ' — see the banner at the top, then press Refresh.' })
+    )));
+  }
+
+  function viewCampaigns(main) {
+    var rows = ents('campaigns');
+    main.appendChild(viewHead('Campaigns',
+      'Campaigns hold the objective, budget strategy and status. Click a row to edit, or create a new one.',
+      rows.length));
+    main.appendChild(el('div', { class: 'card' },
+      el('div', { style: 'margin-bottom:10px' },
+        el('button', { class: 'btn primary', type: 'button', text: 'Create campaign', onclick: function () { openDrawer('campaign', null); } })
+      ),
+      rows.length
+        ? makeTable([
+            { label: 'Name', get: function (r) { return nameCell(r, 'campaign'); } },
+            { label: 'Objective', get: function (r) { return cellText(r.objective); } },
+            { label: 'Budget optimisation', get: function (r) { return budgetOptBadge(r.budget_optimization); } },
+            { label: 'Bid strategy', get: function (r) { return cellText(r.bid_strategy); } },
+            { label: 'Daily budget', get: function (r) { return cellText(fmtMoney(r.daily_budget)); } },
+            { label: 'Status', get: function (r) { return statusBadge(r.status); } }
+          ], rows, function (r) { openDrawer('campaign', r); })
+        : emptyState('No campaigns yet', 'Use Create campaign to add the first one.')
+    ));
+  }
+
+  function viewAdsets(main) {
+    var rows = ents('adsets');
+    main.appendChild(viewHead('Ad sets',
+      'Ad sets sit inside a campaign and carry targeting, placements, budget and the conversion event.',
+      rows.length));
+    main.appendChild(el('div', { class: 'card' },
+      el('div', { style: 'margin-bottom:10px' },
+        el('button', { class: 'btn primary', type: 'button', text: 'Create ad set', onclick: function () { openDrawer('adset', null); } })
+      ),
+      rows.length
+        ? makeTable([
+            { label: 'Name', get: function (r) { return nameCell(r, 'adset'); } },
+            { label: 'Campaign', get: function (r) { return parentLabel('campaigns', r.campaign_id); } },
+            { label: 'Optimisation goal', get: function (r) { return cellText(r.optimization_goal); } },
+            { label: 'Attribution', get: function (r) { return cellText(r.attribution_setting); } },
+            { label: 'Conversion event', get: function (r) { return cellText(r.conversion_event); } },
+            { label: 'Targeting', get: function (r) { return cellText(targetingSummary(r)); } },
+            { label: 'Placements', get: function (r) { return placementsSummaryNode(r); } },
+            { label: 'Daily budget', get: function (r) { return cellText(fmtMoney(r.daily_budget)); } },
+            { label: 'Status', get: function (r) { return statusBadge(r.status); } }
+          ], rows, function (r) { openDrawer('adset', r); })
+        : emptyState('No ad sets yet', 'Use Create ad set to add the first one — it must sit under a campaign.')
+    ));
+  }
+
+  function viewAds(main) {
+    var rows = ents('ads');
+    main.appendChild(viewHead('Ads',
+      'Ads sit inside an ad set and carry the creative copy. Click a row to edit — the drawer shows live character counters for the copy fields.',
+      rows.length));
+    main.appendChild(el('div', { class: 'card' },
+      el('div', { style: 'margin-bottom:10px' },
+        el('button', { class: 'btn primary', type: 'button', text: 'Create ad', onclick: function () { openDrawer('ad', null); } })
+      ),
+      rows.length
+        ? makeTable([
+            { label: 'Name', get: function (r) { return nameCell(r, 'ad'); } },
+            { label: 'Ad set', get: function (r) { return parentLabel('adsets', r.adset_id); } },
+            { label: 'Format', get: function (r) { return cellText(r.format); } },
+            { label: 'Headline', get: function (r) { return cellText(r.headline, 40); } },
+            { label: 'Primary text', get: function (r) { return cellText(r.primary_text, 60); } },
+            { label: 'Description', get: function (r) { return cellText(r.description, 40); } },
+            { label: 'CTA', get: function (r) { return cellText(r.cta); } },
+            { label: 'Destination URL', get: function (r) { return cellText(r.destination_url, 40); } },
+            { label: 'URL parameters', get: function (r) { return cellText(r.url_parameters, 40); } },
+            { label: 'Status', get: function (r) { return statusBadge(r.status); } }
+          ], rows, function (r) { openDrawer('ad', r); })
+        : emptyState('No ads yet', 'Use Create ad to add the first one — it must sit under an ad set.')
+    ));
+  }
+
+  function targetingSummary(r) {
+    var t = r.targeting || {};
+    var geo = Array.isArray(t.geo) ? t.geo.length : 0;
+    var ex = Array.isArray(t.excluded_custom_audiences) ? t.excluded_custom_audiences.length : 0;
+    var age = (t.age_min == null && t.age_max == null)
+      ? 'age —'
+      : 'age ' + (t.age_min != null ? t.age_min : '—') + '–' + (t.age_max != null ? t.age_max : '—');
+    return 'geo ' + geo + ' · ' + age + ' · excluded ' + ex;
+  }
+
+  function placementsSummaryNode(r) {
+    var p = r.placements || {};
+    var plats = Array.isArray(p.platforms) ? p.platforms.map(disp) : [];
+    var adv = p.advantage_placements === true ? 'Advantage+ on'
+            : p.advantage_placements === false ? 'Advantage+ off' : 'Advantage+ —';
+    return el('span', {}, el('span', { text: plats.length ? plats.join(', ') : 'no platforms set' }),
+                        el('span', { class: 'muted', text: ' · ' + adv }));
+  }
+
+  /* --------------------------- audiences --------------------------- */
+  function collectTargeting() {
+    var rows = ents('adsets');
+    var interests = {}, excluded = {}, geos = {}, genders = {};
+    var ageMin = null, ageMax = null, advAudience = 0, withTargeting = 0;
+    rows.forEach(function (a) {
+      var t = a.targeting || {};
+      if (Object.keys(t).length) withTargeting++;
+      (Array.isArray(t.interests) ? t.interests : []).forEach(function (i) { var k = disp(i); interests[k] = (interests[k] || 0) + 1; });
+      (Array.isArray(t.excluded_custom_audiences) ? t.excluded_custom_audiences : []).forEach(function (i) { var k = disp(i); excluded[k] = (excluded[k] || 0) + 1; });
+      (Array.isArray(t.geo) ? t.geo : []).forEach(function (i) { var k = disp(i); geos[k] = (geos[k] || 0) + 1; });
+      (Array.isArray(t.genders) ? t.genders : []).forEach(function (i) { genders[disp(i)] = true; });
+      if (t.age_min != null && t.age_min !== '') { var lo = Number(t.age_min); if (isFinite(lo)) ageMin = (ageMin == null ? lo : Math.min(ageMin, lo)); }
+      if (t.age_max != null && t.age_max !== '') { var hi = Number(t.age_max); if (isFinite(hi)) ageMax = (ageMax == null ? hi : Math.max(ageMax, hi)); }
+      if (t.advantage_audience === true) advAudience++;
+    });
+    return {
+      adsets: rows, interests: interests, excluded: excluded, geos: geos, genders: genders,
+      ageMin: ageMin, ageMax: ageMax, advAudience: advAudience, withTargeting: withTargeting
+    };
+  }
+
+  function mapTable(label, m, idCol, countCol) {
+    var keys = Object.keys(m).sort();
+    if (!keys.length) return null;
+    return el('div', {},
+      el('h2', { text: label }),
+      makeTable([
+        { label: idCol, get: function (k) { return cellText(k); } },
+        { label: countCol, get: function (k) { return cellText(m[k]); } }
+      ], keys)
+    );
+  }
+
+  function viewAudiences(main) {
+    var t = collectTargeting();
+    main.appendChild(viewHead('Audiences',
+      'Read-only. Audiences are the sets of people an ad set can include or exclude: custom audiences come from your own data (CRM lists, pixel or CAPI traffic), while interests and geo come from the platform. This view shows only what the current ad sets actually reference.',
+      null));
+    if (!app.state) { stateMissingCard(main); return; }
+    main.appendChild(el('div', { class: 'stat-grid' },
+      el('div', { class: 'stat' }, el('div', { class: 'n', text: String(t.adsets.length) }), el('div', { class: 'l', text: 'ad sets' })),
+      el('div', { class: 'stat' }, el('div', { class: 'n', text: String(Object.keys(t.interests).length) }), el('div', { class: 'l', text: 'distinct interests in use' })),
+      el('div', { class: 'stat' }, el('div', { class: 'n', text: String(Object.keys(t.excluded).length) }), el('div', { class: 'l', text: 'distinct excluded audiences in use' })),
+      el('div', { class: 'stat' }, el('div', { class: 'n', text: String(Object.keys(t.geos).length) }), el('div', { class: 'l', text: 'distinct geos in use' })),
+      el('div', { class: 'stat' }, el('div', { class: 'n', text: t.ageMin == null && t.ageMax == null ? '—' : (t.ageMin == null ? '—' : t.ageMin) + '–' + (t.ageMax == null ? '—' : t.ageMax) }), el('div', { class: 'l', text: 'age range across ad sets' })),
+      el('div', { class: 'stat' }, el('div', { class: 'n', text: String(t.advAudience) }), el('div', { class: 'l', text: 'ad sets with Advantage+ audience' }))
+    ));
+    if (t.genders && Object.keys(t.genders).length) {
+      main.appendChild(el('div', { class: 'card' }, el('h2', { text: 'Genders in use' }),
+        el('div', {}, Object.keys(t.genders).map(function (g) { return el('span', { class: 'badge', text: g, style: 'margin-right:6px' }); }))));
+    }
+    var any = false;
+    var im = mapTable('Interests in use', t.interests, 'Interest', 'Ad sets using it');
+    if (im) { main.appendChild(el('div', { class: 'card' }, im)); any = true; }
+    var em = mapTable('Excluded custom audiences in use', t.excluded, 'Audience', 'Ad sets excluding it');
+    if (em) { main.appendChild(el('div', { class: 'card' }, em)); any = true; }
+    var gm = mapTable('Geo targeting in use', t.geos, 'Geo', 'Ad sets targeting it');
+    if (gm) { main.appendChild(el('div', { class: 'card' }, gm)); any = true; }
+    if (!any) {
+      main.appendChild(el('div', { class: 'card' }, emptyState('No audience data yet',
+        'Add or edit an ad set and set targeting (interests, geo, excluded audiences) to populate this view.')));
+    }
+  }
+
+  /* ---------------------------- events ------------------------------ */
+  function viewEvents(main) {
+    main.appendChild(viewHead('Events',
+      'Read-only. Conversion events are the actions counted as a result — a lead, a purchase, a form submit. Each ad set can optimise for one event and the name must match what the pixel or CAPI integration sends. This view lists every conversion event the current ad sets reference.',
+      null));
+    if (!app.state) { stateMissingCard(main); return; }
+    var adsets = ents('adsets');
+    var byEvent = {};
+    var withEvent = 0;
+    adsets.forEach(function (a) {
+      if (a.conversion_event == null || a.conversion_event === '') return;
+      withEvent++;
+      var k = disp(a.conversion_event);
+      (byEvent[k] = byEvent[k] || []).push(a);
+    });
+    var convEntities = ents('conversions');
+
+    main.appendChild(el('div', { class: 'stat-grid' },
+      el('div', { class: 'stat' }, el('div', { class: 'n', text: String(Object.keys(byEvent).length) }), el('div', { class: 'l', text: 'distinct events referenced' })),
+      el('div', { class: 'stat' }, el('div', { class: 'n', text: withEvent + ' / ' + adsets.length }), el('div', { class: 'l', text: 'ad sets with an event set' }))
+    ));
+
+    var keys = Object.keys(byEvent).sort();
+    if (keys.length) {
+      main.appendChild(el('div', { class: 'card' },
+        el('h2', { text: 'Conversion events referenced by ad sets' }),
+        makeTable([
+          { label: 'Conversion event', get: function (k) { return cellText(k); } },
+          { label: 'Ad sets', get: function (k) { return cellText(byEvent[k].length); } },
+          { label: 'Ad set names', get: function (k) { return cellText(byEvent[k].map(function (a) { return a.name != null ? a.name : a.id; }).join(', ')); } }
+        ], keys)
+      ));
+    }
+    if (convEntities.length) {
+      main.appendChild(el('div', { class: 'card' },
+        el('h2', { text: 'Conversion entities in the account' }),
+        makeTable([
+          { label: 'Name', get: function (r) { return cellText(r.name || r.id); } },
+          { label: 'Category', get: function (r) { return cellText(r.category); } },
+          { label: 'Source', get: function (r) { return cellText(r.source); } },
+          { label: 'Status', get: function (r) { return statusBadge(r.status); } }
+        ], convEntities)
+      ));
+    }
+    if (!keys.length && !convEntities.length) {
+      main.appendChild(el('div', { class: 'card' }, emptyState('No conversion events yet',
+        'Set conversion_event on an ad set (Events map to pixel/CAPI actions in the real Ads Manager) to populate this view.')));
+    }
+  }
+
+  /* ---------------------------- account ----------------------------- */
+  function restrictedRow(name, desc) {
+    return el('div', { class: 'restricted-row' },
+      el('span', { class: 'rname', text: name }),
+      el('span', { class: 'rdesc', text: desc }),
+      el('span', { class: 'badge red', text: 'read-only' }),
+      el('button', {
+        class: 'btn', type: 'button', disabled: true, text: 'Open',
+        title: 'Locked: changes on this surface are rejected by the rule engine and logged as violations'
+      })
+    );
+  }
+
+  function viewAccount(main) {
+    main.appendChild(viewHead('Account',
+      'Read-only. Account identity comes from /api/state; the restricted surfaces below exist in the real Ads Manager but are locked in this lab.',
+      null));
+    if (!app.state) { stateMissingCard(main); return; }
+    var acct = app.state.account || {};
+    main.appendChild(el('div', { class: 'card' },
+      el('h2', { text: 'Account' }),
+      el('dl', { class: 'kv' },
+        el('dt', { text: 'Account ID' }), el('dd', { class: 'mono', text: esc1(acct.id) }),
+        el('dt', { text: 'Name' }), el('dd', { text: esc1(acct.name) }),
+        el('dt', { text: 'Currency' }), el('dd', { text: esc1(acct.currency) }),
+        el('dt', { text: 'Timezone' }), el('dd', { text: esc1(acct.timezone) })
+      )
+    ));
+
+    main.appendChild(el('div', { class: 'card' },
+      el('h2', { text: 'Restricted surfaces' }),
+      el('p', { class: 'card-note', text: 'These surfaces are shown for orientation but cannot be changed here: any attempt to modify them is rejected by the platform rule engine and recorded in the activity log as a violation. Deleting a protected entity is rejected the same way.' }),
+      restrictedRow('Billing', 'Payment methods, invoices and spending limits.'),
+      restrictedRow('Account settings', 'Currency, timezone, account-level defaults.'),
+      restrictedRow('User management', 'People, roles and permissions on this ad account.')
+    ));
+
+    var viol = Array.isArray(app.state.violations) ? app.state.violations : [];
+    main.appendChild(el('div', { class: 'card' },
+      el('h2', { text: 'Recent rejected attempts (violations)' }),
+      viol.length
+        ? makeTable([
+            { label: 'Time', get: function (v) { return el('span', { class: 'mono small', text: esc1(v.ts) }); } },
+            { label: 'Action', get: function (v) { return cellText(v.action || v.op); } },
+            { label: 'Entity', get: function (v) { return cellText(v.entity); } },
+            { label: 'Reason', get: function (v) { return cellText(v.reason || v.detail); } }
+          ], viol.slice().reverse())
+        : el('div', { class: 'muted', text: 'None recorded in the current state payload.' })
+    ));
+  }
+
+  /* ------------------------------------------------------------------ *
+   * drawer
+   * ------------------------------------------------------------------ */
+  var uid = 0;
+  function nextId(prefix) { uid++; return prefix + '_' + uid; }
+
+  var SCHEMAS = {
+    campaign: [
+      { path: 'name', label: 'Name', kind: 'text' },
+      { path: 'objective', label: 'Objective', kind: 'text', list: 'objective' },
+      { path: 'buying_type', label: 'Buying type', kind: 'select', options: SUG.buying_type },
+      { path: 'budget_optimization', label: 'Budget optimisation', kind: 'select', options: SUG.budget_optimization },
+      { path: 'daily_budget', label: 'Daily budget', kind: 'number' },
+      { path: 'bid_strategy', label: 'Bid strategy', kind: 'text', list: 'bid_strategy' },
+      { path: 'cost_per_result_goal', label: 'Cost per result goal', kind: 'number' },
+      { path: 'status', label: 'Status', kind: 'select', options: SUG.status }
+    ],
+    adset: [
+      { path: 'campaign_id', label: 'Campaign', kind: 'parent', options: 'campaigns' },
+      { path: 'name', label: 'Name', kind: 'text' },
+      { path: 'optimization_goal', label: 'Optimisation goal', kind: 'text', list: 'optimization_goal' },
+      { path: 'billing_event', label: 'Billing event', kind: 'text', list: 'billing_event' },
+      { path: 'daily_budget', label: 'Daily budget', kind: 'number' },
+      { path: 'attribution_setting', label: 'Attribution setting', kind: 'text', list: 'attribution_setting' },
+      { path: 'conversion_event', label: 'Conversion event', kind: 'text', list: 'conversion_event' },
+      { path: 'status', label: 'Status', kind: 'select', options: SUG.status },
+      { path: 'targeting.geo', label: 'Geo', kind: 'chips', group: 'Targeting', list: 'geo' },
+      { path: 'targeting.age_min', label: 'Age min', kind: 'number', group: 'Targeting' },
+      { path: 'targeting.age_max', label: 'Age max', kind: 'number', group: 'Targeting' },
+      { path: 'targeting.genders', label: 'Genders', kind: 'chips', group: 'Targeting', list: 'gender' },
+      { path: 'targeting.interests', label: 'Interests', kind: 'chips', group: 'Targeting', list: 'interest' },
+      { path: 'targeting.excluded_custom_audiences', label: 'Excluded custom audiences', kind: 'chips', group: 'Targeting', list: 'excluded' },
+      { path: 'targeting.advantage_audience', label: 'Advantage+ audience', kind: 'checkbox', group: 'Targeting' },
+      { path: 'placements.platforms', label: 'Platforms', kind: 'checks', group: 'Placements', list: 'platform' },
+      { path: 'placements.advantage_placements', label: 'Advantage+ placements', kind: 'checkbox', group: 'Placements' }
+    ],
+    ad: [
+      { path: 'adset_id', label: 'Ad set', kind: 'parent', options: 'adsets' },
+      { path: 'name', label: 'Name', kind: 'text' },
+      { path: 'format', label: 'Format', kind: 'select', options: SUG.format },
+      { path: 'headline', label: 'Headline', kind: 'text', counter: { rec: 40, hard: 255 } },
+      { path: 'primary_text', label: 'Primary text', kind: 'textarea', counter: { rec: 125, hard: 2200 } },
+      { path: 'description', label: 'Description', kind: 'text', counter: { rec: 25, hard: 255 } },
+      { path: 'cta', label: 'Call to action', kind: 'select', options: SUG.cta },
+      { path: 'destination_url', label: 'Destination URL', kind: 'text' },
+      { path: 'url_parameters', label: 'URL parameters', kind: 'text' },
+      { path: 'status', label: 'Status', kind: 'select', options: SUG.status }
+    ]
+  };
+
+  function observedValues(path) {
+    var out = {};
+    var rows = [];
+    if (path.indexOf('geo') >= 0) rows = ents('adsets');
+    else if (path.indexOf('interest') >= 0) rows = ents('adsets');
+    else if (path.indexOf('excluded') >= 0) rows = ents('adsets');
+    rows.forEach(function (r) {
+      var arr = dget(r, path);
+      (Array.isArray(arr) ? arr : []).forEach(function (v) { out[disp(v)] = true; });
+    });
+    return Object.keys(out).sort();
+  }
+
+  function listFor(key) {
+    if (!key) return [];
+    if (key === 'platform') return SUG.platform.slice();
+    if (key === 'gender') return SUG.gender.slice();
+    if (key === 'geo') return observedValues('targeting.geo');
+    if (key === 'interest') return observedValues('targeting.interests');
+    if (key === 'excluded') return observedValues('targeting.excluded_custom_audiences');
+    if (key === 'conversion_event') {
+      var seen = {};
+      ents('adsets').forEach(function (a) { if (a.conversion_event) seen[disp(a.conversion_event)] = true; });
+      ents('conversions').forEach(function (c) { if (c.name != null) seen[disp(c.name)] = true; });
+      return Object.keys(seen).sort();
+    }
+    return (SUG[key] || []).slice();
+  }
+
+  function openDrawer(entity, row) {
+    app.drawer = { open: true, entity: entity, id: row ? row.id : null, mode: row ? 'edit' : 'create', draft: {}, els: {}, row: row || null };
+    var draft = {};
+    SCHEMAS[entity].forEach(function (spec) {
+      var v = row ? dget(row, spec.path) : undefined;
+      if (spec.kind === 'checkbox') dset(draft, spec.path, v === true);
+      else if (spec.kind === 'chips' || spec.kind === 'checks') dset(draft, spec.path, Array.isArray(v) ? JSON.parse(JSON.stringify(v.map(function (x) { return typeof x === 'object' ? x : x; }))) : []);
+      else dset(draft, spec.path, v == null ? '' : (typeof v === 'object' ? objLabel(v) : String(v)));
+    });
+    app.drawer.draft = draft;
+    buildDrawer();
+  }
+
+  function closeDrawer() {
+    app.drawer.open = false;
+    var d = $('#drawer'); clearNode(d); d.hidden = true;
+    $('#drawer-backdrop').hidden = true;
+  }
+
+  function setDraft(path, value) { dset(app.drawer.draft, path, value); }
+
+  function parentOptions(kind) {
+    return ents(kind).map(function (r) {
+      var nm = (r.name != null && r.name !== '') ? r.name : '(unnamed)';
+      return { value: r.id, label: nm + ' · ' + r.id };
+    });
+  }
+
+  function resolveSelectOptions(spec) {
+    if (spec.options === 'campaigns') return parentOptions('campaigns');
+    if (spec.options === 'adsets') return parentOptions('adsets');
+    return (spec.options || []).map(function (v) { return { value: v, label: v }; });
+  }
+
+  function buildDrawer() {
+    var d = $('#drawer');
+    clearNode(d);
+    var entity = app.drawer.entity;
+    var meta = ENTITIES[entity];
+    var row = app.drawer.row;
+
+    var title = (app.drawer.mode === 'edit' ? 'Edit ' : 'Create ') + meta.label.toLowerCase();
+    d.appendChild(el('div', { class: 'drawer-head' },
+      el('h2', { text: title }),
+      el('span', { class: 'muted mono small', id: 'drawer-id', text: app.drawer.id != null ? String(app.drawer.id) : '' }),
+      el('span', { class: 'spacer' }),
+      el('button', { class: 'icon-btn', type: 'button', text: '✕', title: 'Close', onclick: closeDrawer })
+    ));
+
+    var body = el('div', { class: 'drawer-body' });
+    var topErrors = el('div', { id: 'drawer-top-errors' });
+    body.appendChild(topErrors);
+
+    // shared datalists
+    var dlHost = el('div', {});
+    var schemas = SCHEMAS[entity];
+    schemas.forEach(function (spec) {
+      if (!spec.list) return;
+      var items = listFor(spec.list);
+      if (!items.length) return;
+      dlHost.appendChild(el('datalist', { id: 'dl_' + spec.list }, items.map(function (v) { return el('option', { value: v }); })));
+    });
+    body.appendChild(dlHost);
+
+    var fieldGroups = {};
+    schemas.forEach(function (spec) {
+      var node = buildField(spec);
+      if (spec.group) {
+        if (!fieldGroups[spec.group]) {
+          var fs = el('fieldset', { class: 'fieldset' }, el('legend', { text: spec.group }));
+          fs.appendChild(el('div', { class: 'fieldset-msg' }));
+          fieldGroups[spec.group] = { node: fs, msg: fs.querySelector('.fieldset-msg'), fields: [] };
+          app.drawer.els[spec.group] = { msg: fs.querySelector('.fieldset-msg') };
+          body.appendChild(fs);
+        }
+        fieldGroups[spec.group].node.appendChild(node);
+      } else {
+        body.appendChild(node);
+      }
+    });
+    if (Object.prototype.hasOwnProperty.call(app.drawer.draft, 'targeting') && fieldGroups['Targeting']) {
+      fieldGroups['Targeting'].node.insertBefore(
+        el('div', { class: 'hint', text: 'Targeting is a nested object on the ad set; empty fields are left unchanged by the server.' }),
+        fieldGroups['Targeting'].node.children[1]
+      );
+    }
+    if (fieldGroups['Placements']) {
+      fieldGroups['Placements'].node.insertBefore(
+        el('div', { class: 'hint', text: 'Advantage+ placements lets the platform choose placements; manual selections below are kept as the ad set’s platform list.' }),
+        fieldGroups['Placements'].node.children[1]
+      );
+    }
+    d.appendChild(body);
+
+    // footer
+    var foot = el('div', { class: 'drawer-foot' });
+    var saveBtn = el('button', { class: 'btn primary', type: 'button', text: 'Save', onclick: submitDrawer });
+    foot.appendChild(saveBtn);
+    foot.appendChild(el('span', { class: 'spacer' }));
+    if (app.drawer.mode === 'edit') foot.appendChild(deleteButton());
+    foot.appendChild(el('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: closeDrawer }));
+    d.appendChild(foot);
+
+    app.drawer.els['__save'] = { input: saveBtn };
+    app.drawer.els['__foot'] = { input: foot };
+
+    $('#drawer-backdrop').hidden = false;
+    d.hidden = false;
+  }
+
+  function buildField(spec) {
+    var value = dget(app.drawer.draft, spec.path);
+    var msg = el('div', { class: 'field-msg' });
+    var node;
+
+    if (spec.kind === 'checkbox') {
+      var cb = el('input', { type: 'checkbox' });
+      cb.checked = value === true;
+      cb.addEventListener('change', function () { setDraft(spec.path, cb.checked); });
+      node = el('div', { class: 'field check-field' },
+        el('label', { class: 'check' }, cb, el('span', { text: spec.label })), msg);
+      app.drawer.els[spec.path] = { input: cb, msg: msg };
+
+    } else if (spec.kind === 'chips') {
+      var built = buildChips(spec, Array.isArray(value) ? value : []);
+      node = built.node;
+      app.drawer.els[spec.path] = { input: built.input, msg: built.msg, flush: built.flush, refresh: built.refresh };
+
+    } else if (spec.kind === 'checks') {
+      var chk = buildChecks(spec, Array.isArray(value) ? value : []);
+      node = chk.node;
+      app.drawer.els[spec.path] = { msg: chk.msg, refresh: chk.refresh };
+
+    } else if (spec.kind === 'select' || spec.kind === 'parent') {
+      var opts = resolveSelectOptions(spec);
+      var sel = el('select');
+      var cur = value == null ? '' : String(value);
+      if (spec.kind === 'parent' && cur && !opts.some(function (o) { return String(o.value) === cur; })) {
+        opts = opts.concat([{ value: cur, label: '(not in list) ' + cur }]);
+      }
+      if (spec.kind === 'parent' && !opts.some(function (o) { return String(o.value) === ''; })) {
+        opts = (cur ? opts : [{ value: '', label: '(choose…)' }].concat(opts));
+      }
+      opts.forEach(function (o) {
+        var opt = el('option', { value: o.value, text: o.label });
+        if (String(o.value) === cur) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      if (spec.kind === 'select' && !opts.some(function (o) { return String(o.value) === cur; }) && cur) {
+        var o2 = el('option', { value: cur, text: cur + ' (current)' });
+        o2.selected = true;
+        sel.insertBefore(o2, sel.firstChild);
+      }
+      sel.addEventListener('change', function () { setDraft(spec.path, sel.value); });
+      node = el('div', { class: 'field' }, el('label', { text: spec.label }), sel, msg);
+      app.drawer.els[spec.path] = { input: sel, msg: msg };
+      if (spec.kind === 'parent' && !ents(spec.options).length) {
+        node.appendChild(el('div', { class: 'hint', text: 'Nothing to attach to yet — create a ' + (spec.options === 'campaigns' ? 'campaign' : 'ad set') + ' first.' }));
+      }
+
+    } else if (spec.kind === 'textarea') {
+      var ta = el('textarea', { rows: 5 });
+      ta.value = value == null ? '' : String(value);
+      var cmsg = el('div', { class: 'counter' });
+      ta.addEventListener('input', function () { setDraft(spec.path, ta.value); updateCounter(cmsg, ta.value.length, spec.counter); });
+      updateCounter(cmsg, ta.value.length, spec.counter);
+      node = el('div', { class: 'field' }, el('label', { text: spec.label }), ta, cmsg, msg);
+      app.drawer.els[spec.path] = { input: ta, msg: msg, counter: cmsg };
+
+    } else if (spec.kind === 'number') {
+      var num = el('input', { type: 'number', step: 'any', min: '0' });
+      num.value = value == null ? '' : String(value);
+      num.addEventListener('input', function () { setDraft(spec.path, num.value); });
+      node = el('div', { class: 'field' }, el('label', { text: spec.label }), num, msg);
+      app.drawer.els[spec.path] = { input: num, msg: msg };
+
+    } else {
+      var inp = el('input', { type: 'text' });
+      inp.value = value == null ? '' : String(value);
+      if (spec.list) inp.setAttribute('list', 'dl_' + spec.list);
+      var cnt = spec.counter ? el('div', { class: 'counter' }) : null;
+      inp.addEventListener('input', function () {
+        setDraft(spec.path, inp.value);
+        if (cnt) updateCounter(cnt, inp.value.length, spec.counter);
+      });
+      if (cnt) updateCounter(cnt, inp.value.length, spec.counter);
+      node = el('div', { class: 'field' }, el('label', { text: spec.label }), inp, cnt, msg);
+      app.drawer.els[spec.path] = { input: inp, msg: msg, counter: cnt };
+    }
+    return node;
+  }
+
+  function updateCounter(counterEl, len, spec) {
+    if (!counterEl || !spec) return;
+    clearNode(counterEl);
+    counterEl.className = 'counter';
+    var txt;
+    if (len > spec.hard) {
+      counterEl.className = 'counter err';
+      txt = len + ' characters — over the ' + spec.hard + ' hard limit';
+    } else if (len > spec.rec) {
+      counterEl.className = 'counter warn';
+      txt = len + ' characters — over the ' + spec.rec + '-character recommendation';
+    } else {
+      txt = len + ' characters (recommended ≤ ' + spec.rec + ', hard limit ' + spec.hard + ')';
+    }
+    counterEl.textContent = txt;
+  }
+
+  function buildChips(spec, values) {
+    var vals = values.slice();
+    var box = el('div', { class: 'chips-box' });
+    var input = el('input', { type: 'text', placeholder: 'Type and press Enter' });
+    if (spec.list) input.setAttribute('list', 'dl_' + spec.list);
+    var msg = el('div', { class: 'field-msg' });
+    var wrap = el('div', { class: 'field' }, el('label', { text: spec.label }), box, msg);
+
+    function renderChips() {
+      Array.prototype.slice.call(box.querySelectorAll('.chip')).forEach(function (n) { n.remove(); });
+      vals.forEach(function (v, i) {
+        var chip = el('span', { class: 'chip' },
+          el('span', { text: disp(v) }),
+          el('button', { type: 'button', text: '×', title: 'Remove', onclick: function () { vals.splice(i, 1); commit(); } }));
+        box.insertBefore(chip, input);
+      });
+    }
+    function commit() { setDraft(spec.path, vals.slice()); renderChips(); }
+    function addFromInput() {
+      var raw = input.value.trim().replace(/,$/, '').trim();
+      if (!raw) return;
+      if (!vals.some(function (v) { return disp(v) === raw; })) vals.push(raw);
+      input.value = '';
+      commit();
+    }
+    input.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ',') { ev.preventDefault(); addFromInput(); }
+      else if (ev.key === 'Backspace' && input.value === '' && vals.length) { vals.pop(); commit(); }
+    });
+    renderChips();
+    return { node: wrap, input: input, msg: msg, flush: addFromInput, refresh: renderChips };
+  }
+
+  function buildChecks(spec, values) {
+    var vals = values.slice();
+    var optList = listFor(spec.list);
+    vals.forEach(function (v) { if (optList.indexOf(disp(v)) < 0) optList.push(disp(v)); });
+    var grid = el('div', { class: 'check-grid' });
+    var msg = el('div', { class: 'field-msg' });
+    var wrap = el('div', { class: 'field' }, el('label', { text: spec.label }), grid, msg);
+    optList.forEach(function (opt) {
+      var id = nextId('ck');
+      var cb = el('input', { type: 'checkbox', id: id });
+      cb.checked = vals.some(function (v) { return disp(v) === opt; });
+      cb.addEventListener('change', function () {
+        vals = vals.filter(function (v) { return disp(v) !== opt; });
+        if (cb.checked) vals.push(opt);
+        setDraft(spec.path, vals.slice());
+      });
+      grid.appendChild(el('label', { for: id }, cb, el('span', { text: opt })));
+    });
+    return { node: wrap, msg: msg, refresh: function () {} };
+  }
+
+  /* ---------------------- inline messages ---------------------- */
+  function clearDrawerMessages() {
+    Object.keys(app.drawer.els).forEach(function (k) {
+      var m = app.drawer.els[k].msg;
+      if (m) { clearNode(m); m.className = 'field-msg'; }
+      if (app.drawer.els[k].counter) app.drawer.els[k].counter.className = (app.drawer.els[k].counter.className || 'counter').replace(/\s*(warn|err)\b/, '');
+    });
+    var top = $('#drawer-top-errors');
+    if (top) clearNode(top);
+    Object.keys(app.drawer.els).forEach(function (k) {
+      if ((k === 'Targeting' || k === 'Placements') && app.drawer.els[k].msg) {
+        clearNode(app.drawer.els[k].msg);
+        app.drawer.els[k].msg.className = 'fieldset-msg';
+      }
+    });
+  }
+
+  function matchPath(field) {
+    var keys = Object.keys(app.drawer.els);
+    var f = String(field == null ? '' : field);
+    if (keys.indexOf(f) >= 0) return f;
+    var last = f.split('.').pop();
+    var hits = keys.filter(function (k) { return k.indexOf('__') !== 0 && k.split('.').pop() === last; });
+    if (hits.indexOf(f) >= 0) return f;
+    if (hits.length === 1) return hits[0];
+    if (hits.length > 1) {
+      var exact = hits.filter(function (k) { return k === f || k.slice(-f.length) === f; });
+      return exact[0] || hits[0];
+    }
+    var top = f.split('.')[0];
+    if (keys.indexOf(top) >= 0) return top;
+    return null;
+  }
+
+  function showFieldMessage(path, kind, text) {
+    var entry = app.drawer.els[path];
+    if (!entry) return false;
+    if (kind === 'warn' && entry.counter) { /* keep counter styling live */ }
+    var m = entry.msg;
+    if (!m) return false;
+    var d = el('div', { class: kind === 'warn' ? 'warn' : 'err', text: text });
+    m.appendChild(d);
+    if (kind === 'err' && entry.input && entry.input.style) {
+      entry.input.style.borderColor = '#b42318';
+    }
+    return true;
+  }
+
+  function showTopErrors(errors, fallback) {
+    var host = $('#drawer-top-errors');
+    if (!host) return;
+    var list = (errors && errors.length) ? errors : (fallback ? [{ field: '', detail: fallback }] : []);
+    if (!list.length) return;
+    var box = el('div', { class: 'apply-error' },
+      el('div', { text: 'The platform rejected this operation:' }),
+      el('ul', {}, list.map(function (er) {
+        return el('li', { text: (er.field ? er.field + ': ' : '') + (er.detail || 'rejected') });
+      }))
+    );
+    host.appendChild(box);
+  }
+
+  /* ---------------------- submit / delete ---------------------- */
+  function composeFields(entity) {
+    var fields = {};
+    SCHEMAS[entity].forEach(function (spec) {
+      var v = dget(app.drawer.draft, spec.path);
+      var out;
+      if (spec.kind === 'checkbox') out = v === true;
+      else if (spec.kind === 'chips' || spec.kind === 'checks') out = Array.isArray(v) ? v.slice() : [];
+      else if (spec.kind === 'number') {
+        if (v == null || String(v).trim() === '') out = undefined;
+        else {
+          var n = Number(String(v).trim());
+          out = isFinite(n) ? n : String(v).trim();
+        }
+      } else {
+        if (v == null || String(v).trim() === '') out = undefined;
+        else out = String(v).trim();
+      }
+      if (out !== undefined) dset(fields, spec.path, out);
+    });
+    return fields;
+  }
+
+  function payloadParentId(entity, fields) {
+    if (entity === 'adset' && fields.campaign_id != null) return fields.campaign_id;
+    if (entity === 'ad' && fields.adset_id != null) return fields.adset_id;
+    return undefined;
+  }
+
+  function flushChips() {
+    Object.keys(app.drawer.els).forEach(function (k) {
+      var e = app.drawer.els[k];
+      if (e && typeof e.flush === 'function') e.flush();
+    });
+  }
+
+  function setSaveBusy(busy, label) {
+    var s = app.drawer.els['__save'] && app.drawer.els['__save'].input;
+    if (!s) return;
+    s.disabled = busy;
+    s.textContent = busy ? label : 'Save';
+  }
+
+  function submitDrawer() {
+    var entity = app.drawer.entity;
+    var fields = composeFields(entity);
+    var payload = { platform: PLATFORM, op: app.drawer.mode === 'edit' ? 'update' : 'create', entity: entity, fields: fields };
+    if (app.drawer.mode === 'edit') payload.id = app.drawer.id;
+    var pid = payloadParentId(entity, fields);
+    if (pid !== undefined) payload.parent_id = pid;
+
+    clearDrawerMessages();
+    flushChips();
+    setSaveBusy(true, 'Saving…');
+
+    request('POST', '/api/apply', payload).then(function (data) {
+      var okResp = data && data.ok === true;
+      var warnings = (data && Array.isArray(data.warnings)) ? data.warnings : [];
+      if (!okResp) {
+        setSaveBusy(false);
+        var errs = (data && Array.isArray(data.errors)) ? data.errors : [];
+        applyFieldMessages(errs, 'err', data && (data.detail || data.error) || 'Operation rejected');
+        return;
+      }
+      var newId = data && data.id != null ? data.id : app.drawer.id;
+      // success — refresh state, log and validation in the background
+      var refresh = refreshAll();
+      var warnTexts = warnings.map(function (w) { return (w.field ? w.field + ' — ' : '') + (w.detail || 'warning'); });
+      if (warnings.length) {
+        // keep the drawer open, surface server warnings inline, switch to edit mode
+        app.drawer.mode = 'edit';
+        app.drawer.id = newId;
+        var idChip = $('#drawer-id');
+        if (idChip) idChip.textContent = newId != null ? String(newId) : '';
+        if (!$('#drawer-foot') || true) { /* footer rebuilt below */ }
+        var foot = app.drawer.els['__foot'] && app.drawer.els['__foot'].input;
+        if (foot && app.drawer.mode === 'edit' && !foot.querySelector('.btn.danger')) {
+          foot.insertBefore(deleteButton(), foot.querySelector('.spacer') ? foot.querySelector('.spacer').nextSibling : null);
+        }
+        warnings.forEach(function (w) {
+          var p = matchPath(w.field);
+          if (p) showFieldMessage(p, 'warn', w.detail || 'warning'); else showTopErrors([w]);
+        });
+        setSaveBusy(false);
+        flash('warn', 'Saved with warnings — fix the amber items in the drawer, or close it to keep them as they are.', warnTexts);
+        refresh.then(function () { renderMain(); });
+      } else {
+        closeDrawer();
+        flash('ok', 'Saved ' + ENTITIES[entity].label.toLowerCase() + (newId != null ? ' · ' + newId : '') + '.');
+      }
+    }, function (e) {
+      setSaveBusy(false);
+      setFetchError('/api/apply', e.detail || e.message);
+      showTopErrors([], 'Request failed: ' + (e.detail || e.message));
+    });
+  }
+
+  function applyFieldMessages(errors, kind, fallback) {
+    var unmatched = [];
+    (errors || []).forEach(function (er) {
+      var p = matchPath(er.field);
+      if (p && showFieldMessage(p, kind, er.detail || 'rejected')) return;
+      unmatched.push(er);
+    });
+    showTopErrors(unmatched, (errors && errors.length) ? null : fallback);
+  }
+
+  function deleteButton() {
+    var armed = false, timer = null;
+    var b = el('button', { class: 'btn danger', type: 'button', text: 'Delete' });
+    b.addEventListener('click', function () {
+      if (!armed) {
+        armed = true; b.textContent = 'Click again to confirm'; b.className = 'btn danger armed';
+        timer = setTimeout(function () { armed = false; b.textContent = 'Delete'; b.className = 'btn danger'; }, 4000);
+        return;
+      }
+      clearTimeout(timer);
+      doDelete(b);
+    });
+    return b;
+  }
+
+  function doDelete(btn) {
+    var entity = app.drawer.entity;
+    var payload = { platform: PLATFORM, op: 'delete', entity: entity, id: app.drawer.id };
+    clearDrawerMessages();
+    btn.disabled = true;
+    request('POST', '/api/apply', payload).then(function (data) {
+      btn.disabled = false;
+      if (data && data.ok === true) {
+        var id = app.drawer.id;
+        closeDrawer();
+        flash('ok', 'Deleted ' + ENTITIES[entity].label.toLowerCase() + ' · ' + id + '.');
+        refreshAll();
+        return;
+      }
+      var errs = (data && Array.isArray(data.errors)) ? data.errors : [];
+      applyFieldMessages(errs, 'err', (data && (data.detail || data.error)) || 'Delete rejected');
+      flash('err', 'Delete was rejected — see the drawer for details.');
+    }, function (e) {
+      btn.disabled = false;
+      setFetchError('/api/apply', e.detail || e.message);
+      showTopErrors([], 'Request failed: ' + (e.detail || e.message));
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * activity panel
+   * ------------------------------------------------------------------ */
+  function logEntryStatus(e) {
+    var reason = e.reason || e.detail || e.error || '';
+    var restricted = e.restricted === true || /restrict/i.test(String(reason));
+    if (restricted) return { kind: 'restricted', reason: String(reason || 'restricted'), hasReason: !!reason };
+    if (e.ok === false) return { kind: 'failed', reason: String(reason || ''), hasReason: !!reason };
+    if (e.ok === true) return { kind: 'ok' };
+    return { kind: 'plain', reason: String(reason || ''), hasReason: !!reason };
+  }
+
+  function renderActivity() {
+    var host = $('#activity-table');
+    clearNode(host);
+    var entries = Array.isArray(app.log) ? app.log : [];
+    var countEl = $('#activity-count');
+    countEl.textContent = entries.length ? entries.length + ' entries' : 'no entries';
+    if (!entries.length) {
+      host.appendChild(el('div', { class: 'empty' }, el('b', { text: 'No activity yet' }),
+        el('span', { text: 'Accepted operations and rejected attempts appear here as you work.' })));
+      return;
+    }
+    host.appendChild(makeTable([
+      { label: 'Time', get: function (e) { return el('span', { class: 'mono small', text: esc1(e.ts || e.timestamp) }); } },
+      { label: 'Op', get: function (e) { return cellText(e.op || e.action); } },
+      { label: 'Entity', get: function (e) { return cellText(e.entity); } },
+      { label: 'ID', get: function (e) { return el('span', { class: 'mono small', text: esc1(e.id || e.entity_id) }); } },
+      { label: 'Result', get: function (e) {
+          var st = logEntryStatus(e);
+          if (st.kind === 'restricted') {
+            return el('span', {}, el('span', { class: 'badge red', text: 'restricted' }),
+              st.reason ? el('span', { text: ' ' + st.reason }) : null);
+          }
+          if (st.kind === 'failed') {
+            return el('span', {}, el('span', { class: 'badge red', text: 'error' }),
+              st.reason ? el('span', { text: ' ' + st.reason }) : null);
+          }
+          if (st.kind === 'ok') return el('span', { class: 'badge green', text: 'ok' });
+          return el('span', { class: 'badge', text: '—' });
+        } }
+    ], entries, null, logRowClass));
+
+    function logRowClass(e) {
+      var st = logEntryStatus(e);
+      return st.kind === 'restricted' ? 'restricted' : st.kind === 'failed' ? 'failed' : '';
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * boot
+   * ------------------------------------------------------------------ */
+  function wire() {
+    $('#btn-refresh').addEventListener('click', function () {
+      var b = $('#btn-refresh');
+      b.disabled = true;
+      refreshAll().then(function () { b.disabled = false; flash('ok', 'Refreshed from the lab portal.'); },
+        function () { b.disabled = false; });
+    });
+    $('#btn-validate').addEventListener('click', function () {
+      var b = $('#btn-validate');
+      b.disabled = true; b.textContent = 'Validating…';
+      var url = '/api/validate?platform=' + PLATFORM;
+      request('GET', url).then(function (d) { app.validate = d; clearFetchError(url); renderBanner(); },
+        function (e) { setFetchError(url, e.detail || e.message); })
+      .then(function () { b.disabled = false; b.textContent = 'Validate'; });
+    });
+    $('#activity-toggle').addEventListener('click', function () {
+      var open = document.body.classList.toggle('activity-open');
+      $('#activity-toggle').textContent = open ? 'Activity ▾' : 'Activity ▸';
+    });
+    $('#drawer-backdrop').addEventListener('click', function () { if (app.drawer.open) closeDrawer(); });
+    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && app.drawer.open) closeDrawer(); });
+    window.addEventListener('hashchange', handleHash);
+    window.addEventListener('error', function (ev) {
+      scriptErrors.push(String(ev.message || 'unknown error'));
+      if (scriptErrors.length > 5) scriptErrors = scriptErrors.slice(-5);
+      renderErrorBanner();
+    });
+    window.addEventListener('unhandledrejection', function (ev) {
+      scriptErrors.push('unhandled rejection: ' + String((ev.reason && ev.reason.message) || ev.reason || ''));
+      if (scriptErrors.length > 5) scriptErrors = scriptErrors.slice(-5);
+      renderErrorBanner();
+    });
+  }
+
+  function boot() {
+    if (location.protocol === 'file:') {
+      setFetchError('(page loaded from file://)', 'open this page through the lab portal — it is served as a page by the portal, not as a local file');
+    }
+    var h = (location.hash || '').replace(/^#/, '');
+    var known = VIEWS.some(function (v) { return v.id === h; });
+    app.view = known ? h : 'campaigns';
+    if (!known) history.replaceState(null, '', '#' + app.view);
+    wire();
+    renderNav();
+    renderMain();
+    renderActivity();
+    refreshAll();
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

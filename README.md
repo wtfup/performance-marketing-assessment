@@ -1,48 +1,40 @@
-# Performance Marketing Operator Lab
+# WTF Performance Marketing Assessment
 
-A two-part hiring work sample for a hands-on performance-marketing operator at WTF Gyms (an Indian gym chain). You run a synthetic acquisition account locally — a mock ad API, a CRM export, a warehouse, account exports, and a tracking pipeline that must honour a written contract — and you produce the numbers, the fixes, and the growth plan an operator would be expected to ship.
+Two levels. **Start with Level 1** — it is the one that matches a performance-marketing hire.
 
-Everything is synthetic, offline, and local. Start with `candidate/00_START_HERE.md`.
+## Level 1 — Ads Lab (browser only, no installs) → [`ads-lab/`](ads-lab/)
 
-## Quickstart
+The candidate opens three HTML files on any laptop and builds real campaign structures, does the
+money maths on our products, and audits a messy account. No Python, no terminal, no accounts, no
+internet. ~90 minutes, then a 15-minute defence call.
 
-```bash
-git clone https://github.com/wtfup/performance-marketing-assessment.git
-cd performance-marketing-assessment
-# unzip the kit your hiring coordinator sent you, AT THE REPO ROOT
-# (it supplies kit.json, data/ and tracking/ — see kit/README.md)
-unzip path/to/your-kit.zip -d .
-bash lab/up.sh        # validates the kit, boots the mock ad API on http://127.0.0.1:8781
-bash lab/status.sh    # API health, candidate id, window, credentials
-```
+- `ads-lab/meta.html` — build the ₹24,000 all-access pass campaign, the ₹100 daily-pass app campaign, and Noida walk-in lead-gen.
+- `ads-lab/google.html` — build a Search campaign (brand / non-brand / competitor, keywords, negatives, RSA, sitelinks, geo, bidding) and fix five planted account problems.
+- `ads-lab/index.html` — CPL/CAC/ROAS maths on real-looking numbers, the kill-fix-scale call, ₹10,00,000 budget allocation by marginal cost, and a 10-row account audit.
 
-Then work through `candidate/01_PART1_OPERATOR.md` and `candidate/02_PART2_GROWTH_AI.md`. Stop the lab with `bash lab/down.sh` when you are done.
+Candidate code drives every variable number, so no two candidates see the same data.
 
-## What you deliver
+## Level 2 — Operator Lab (advanced / senior hires, optional)
 
-- `submission/pull_proof.json` + `submission/raw/` — the API data you pulled yourself.
-- `submission/answers.json` — the reconciled truth: totals, metrics, per-campaign, data issues.
-- `submission/decisions.json` — one decision per issue found in the account export set.
-- `submission/plan.json` — how you would spend the next budget across channels.
-- `submission/run.sh` — a python3-stdlib-only script that regenerates all of the above. Reviewers re-run it.
-- `submission/{RECON,TRACKING_REPORT,AUDIT}.md` — your evidence write-ups (150+ words each).
-- your fixed `tracking/config/*.json`.
+The deeper, terminal-based lab for candidates where data work and tracking forensics are part of the
+job description (senior growth engineer, tracking lead, head of performance). Requires python3 and a
+terminal: pull from a mock ad API, reconcile three messy sources, fix a broken tracking pipeline,
+audit an export, build a plan, and defend it.
 
-## Repo layout
+Start at [`candidate/00_START_HERE.md`](candidate/00_START_HERE.md). Everything is synthetic and
+local; nothing here spends money or touches real accounts.
 
-- `lab/` — mock ad API, lab control scripts, acceptance checks. Do not edit.
-- `tracking/` — the tracking pipeline (frozen engine) and the configs you must repair. See `tracking/README.md`.
-- `candidate/` — your briefs; start at `00_START_HERE.md`. The supervisor guide is `07_SUPERVISOR_GUIDE.md`.
-- `submission/` — templates and your deliverables. See `submission/README.md`.
-- `scripts/` — supervisor tooling.
-- `data/`, `kit.json`, `tracking/journeys.jsonl` — supplied by your kit, not in git. See `kit/README.md`.
+## Layout
 
-## Rules at a glance
+- `ads-lab/` — Level 1: the three browser stations + their README (`ads-lab/README.md`). **Start here.**
+- `candidate/` — Level 2 candidate documentation.
+- `lab/` — Level 2 engine (mock ad API, acceptance checks, lab scripts) and `lab/ui/` (station design contract).
+- `tracking/` — Level 2 tracking pipeline + fixed-config work.
+- `submission/` — Level 2 artefact templates.
+- `scripts/verify-submission.sh` — supervisor-side structural verification for Level 2.
 
-- Synthetic data only. No real people, accounts, or credentials anywhere.
-- Python 3 standard library only (sqlite3 included). No pip installs.
-- Never edit `lab/`, `tracking/pipeline.py`, `scripts/`, or the kit's data; the only kit files you change are `tracking/config/*.json`.
-- Part 1 is closed-book (no AI, no internet beyond the local lab). Part 2 allows AI — disclose it in `submission/NOTES.md`.
-- No public deploy, and do not publish anything from this assessment. Hand your work to the hiring coordinator privately.
+## Rules that always apply
 
-Full rules and scoring: `candidate/05_RULES_AND_SCORING.md`.
+- Synthetic data only; no real customer data, credentials or ad accounts; nothing is ever deployed.
+- Do not publish assessment work; do not share a kit or a candidate code.
+- AI tools: allowed in Level 1 only if disclosed, and you must be able to explain your own numbers on the call. Level 2 has its own rules (Part 1 closed-book).

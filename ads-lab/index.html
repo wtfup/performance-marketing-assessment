@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WTF Ads Lab — Start here</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --maroon:#8B0000; --gold:#C9A227; --ivory:#FAF8F5; --ink:#1A1A1A; --muted:#6B5B50;
+    --alt:#F3EEE6; --good:#1F6B3B; --bad:#B00020; --warn:#9A6A00; --line:#E4DED2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 Arial,Helvetica,sans-serif;background:var(--ivory);color:var(--ink)}
+  header{position:sticky;top:0;z-index:20;background:var(--maroon);color:var(--ivory);padding:10px 18px;
+         display:flex;gap:18px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  header .brand{font-family:Georgia,serif;font-size:18px;font-weight:700;letter-spacing:.3px}
+  header .kicker{color:var(--gold);font-size:11px;letter-spacing:1.4px;text-transform:uppercase}
+  header .spacer{flex:1}
+  header label{font-size:12px;color:#F3E9D8}
+  header input[type=text]{font:13px/1.2 Arial;padding:6px 8px;border:1px solid rgba(255,255,255,.35);
+        border-radius:6px;background:rgba(255,255,255,.12);color:#fff;width:150px}
+  header input[type=text]::placeholder{color:rgba(255,255,255,.55)}
+  nav{display:flex;gap:6px;padding:12px 18px 0;flex-wrap:wrap}
+  nav button{font:13px/1 Arial;padding:9px 14px;border:1px solid var(--line);background:#fff;color:var(--muted);
+        border-radius:8px 8px 0 0;cursor:pointer}
+  nav button.active{background:var(--maroon);color:#fff;border-color:var(--maroon);font-weight:700}
+  main{max-width:1080px;margin:0 auto;padding:0 18px 80px}
+  section{display:none;background:#fff;border:1px solid var(--line);border-radius:0 10px 10px 10px;padding:22px}
+  section.active{display:block}
+  h2{font-family:Georgia,serif;color:var(--maroon);margin:6px 0 10px;font-size:22px}
+  h3{font-family:Georgia,serif;color:var(--maroon);margin:20px 0 8px;font-size:17px}
+  p{margin:6px 0 10px}
+  .lead{color:var(--muted)}
+  .card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0;background:#fff}
+  .card.tint{background:var(--alt)}
+  .card.rule{border-left:5px solid var(--maroon)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:900px){.grid2{grid-template-columns:1fr}}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:10px 0}
+  th{background:var(--maroon);color:var(--ivory);text-align:left;padding:7px 9px;font-weight:700}
+  td{border-bottom:1px solid var(--line);padding:6px 9px;vertical-align:top}
+  tr:nth-child(even) td{background:var(--alt)}
+  input[type=number],input[type=text].cell{font:13.5px Arial;padding:5px 6px;border:1px solid #CFC6B6;border-radius:6px;width:110px}
+  .ok{color:var(--good);font-weight:700}
+  .no{color:var(--bad);font-weight:700}
+  .chip{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--alt);color:var(--muted);margin-right:6px}
+  .chip.good{background:#E4F2E8;color:var(--good)}
+  .chip.bad{background:#FBE7EA;color:var(--bad)}
+  button.primary{background:var(--maroon);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:14px Arial;font-weight:700;cursor:pointer}
+  button.ghost{background:#fff;color:var(--maroon);border:1px solid var(--maroon);border-radius:8px;padding:9px 14px;font:13.5px Arial;cursor:pointer}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .scorebar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:10px 0 0}
+  .pill{font:13px Arial;background:var(--alt);border-radius:99px;padding:6px 12px;color:var(--muted)}
+  .pill b{color:var(--ink)}
+  .small{font-size:12.5px;color:var(--muted)}
+  ol,ul{margin:8px 0 12px 20px}
+  li{margin:4px 0}
+  details{margin:8px 0}
+  summary{cursor:pointer;color:var(--maroon);font-weight:700}
+  textarea{width:100%;min-height:90px;font:13.5px/1.5 Arial;border:1px solid #CFC6B6;border-radius:8px;padding:10px}
+  .footerbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);
+        padding:10px 18px;display:flex;gap:12px;align-items:center;z-index:15}
+  .footerbar .spacer{flex:1}
+  .reveal{background:#FFF8E6;border:1px dashed var(--gold);border-radius:8px;padding:10px 12px;margin:8px 0;font-size:13.5px}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="kicker">WTF · Ads Lab · Performance Marketing</div>
+    <div class="brand">Ads Lab — start here</div>
+  </div>
+  <div class="spacer"></div>
+  <label>Your candidate code
+    <input type="text" id="code" placeholder="e.g. WTF-PM-0007" autocomplete="off">
+  </label>
+  <div id="codeState" class="pill">code not set</div>
+</header>
+
+<nav>
+  <button data-tab="start" class="active">Start</button>
+  <button data-tab="money">Money &amp; ROAS</button>
+  <button data-tab="audit">Account audit</button>
+  <button data-tab="send">What to send back</button>
+</nav>
+
+<main>
+
+<!-- ============================= START -->
+<section id="start" class="active">
+  <h2>What this is (2 minutes, read it once)</h2>
+  <p class="lead">This is a hands-on working test — not a quiz. You will build real campaign structures for Meta and Google, do the money maths on our products, and audit a messy account. Everything runs in your browser. Nothing to install.</p>
+
+  <div class="card rule">
+    <b>How to run it</b>
+    <ol>
+      <li>Open the three files you received — <b>meta.html</b>, <b>google.html</b> and this one — by double-clicking them (Chrome or Edge). Keep them in the same folder.</li>
+      <li>Type your <b>candidate code</b> (given to you by HR) in the box at the top of each file. It changes the numbers so every candidate gets a different set.</li>
+      <li>Work through the tabs in each file. Your work saves automatically in that browser. When you are done with a file, click <b>Export my work</b> — it downloads a small JSON file.</li>
+      <li>Send back the three JSON files (details in <b>What to send back</b>).</li>
+    </ol>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">Station 1 — Meta build <span class="chip">meta.html</span></h3>
+      <p>Build three campaigns in a mock Meta Ads Manager: the ₹24,000 all-access pass, the ₹100 daily pass sold through the app, and walk-in lead generation for one Noida club. Objectives, budgets, audiences, placements, attribution, creative text and UTM tracking — all of it.</p>
+      <p class="small">~35 minutes</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Station 2 — Google build <span class="chip">google.html</span></h3>
+      <p>Build a Search campaign for Noida walk-in leads (brand vs non-brand vs competitor ad groups, keywords and match types, negatives, a responsive search ad within Google's limits, sitelinks, geo targeting, bidding) — then fix five problems in a broken account.</p>
+      <p class="small">~30 minutes</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Station 3 — Money &amp; ROAS <span class="chip">this file</span></h3>
+      <p>The products: ₹24,000 all-access pass, ₹100 daily pass on the app, gym walk-ins, and a ₹45,000 course. You get real-looking last-30-days numbers: work out CPL, CAC, ROAS (including new-customer ROAS), then allocate next month's ₹10,00,000.</p>
+      <p class="small">~20 minutes</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Station 4 — Account audit <span class="chip">this file</span></h3>
+      <p>A 10-row export with things wrong in it. Pick each row's action, and tick what is broken across the account. Numbers must back every call.</p>
+      <p class="small">~15 minutes</p>
+    </div>
+  </div>
+
+  <div class="card tint">
+    <b>Four rules that decide your result</b>
+    <ol>
+      <li><b>Numbers or it didn't happen.</b> Every decision needs a number from the data — no opinions.</li>
+      <li><b>Say what you would NOT do.</b> If something should not be touched, say it and why. That counts as much as building.</li>
+      <li><b>Don't fake it.</b> Your code changes the numbers. Screenshots or copy-paste from someone else will be caught in the call.</li>
+      <li><b>Work in your own words.</b> Using AI tools or notes? Fine — but you must be able to explain every number and every setting on a call.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <b>Your products (memorise these — they show up everywhere)</b>
+    <table>
+      <tr><th>Product</th><th>Price</th><th>How it's sold</th><th>What "good" looks like</th></tr>
+      <tr><td>All-access pass (12 months)</td><td>₹24,000</td><td>Online form or WhatsApp → human call closes</td><td>CAC under ₹8,000, close rate 5%+</td></tr>
+      <tr><td>Daily pass, app</td><td>₹100/day</td><td>Straight through the app</td><td>Instant purchase, repeat use</td></tr>
+      <tr><td>Gym walk-ins</td><td>Free (BCA scan)</td><td>Lead → visit → membership pitch</td><td>Cost per walk-in under ₹1,200</td></tr>
+      <tr><td>Trainer / nutrition course</td><td>₹45,000</td><td>Ad → lead → counsellor call</td><td>CAC under ₹12,000</td></tr>
+    </table>
+    <p class="small">These are the numbers you'll be judged on. If a campaign can't clear them, it gets fixed or killed — that's the job.</p>
+  </div>
+</section>
+
+<!-- ============================= MONEY -->
+<section id="money">
+  <h2>Station 3 — Money &amp; ROAS</h2>
+  <p class="lead">Below is last month's performance. Fill in the metrics yourself — type the number, then press <b>Check my numbers</b>. Then allocate next month's budget.</p>
+
+  <h3>Part A — Last month's numbers</h3>
+  <div id="perfTableWrap"></div>
+  <div class="scorebar">
+    <button class="primary" id="checkMetrics">Check my numbers</button>
+    <span class="pill" id="metricsScore">—</span>
+  </div>
+
+  <h3>Part B — Your call: kill, fix or scale</h3>
+  <p class="small">For each channel pick one action. Wrong actions cost you points; so does sitting on the fence.</p>
+  <div id="actionsWrap"></div>
+
+  <h3>Part C — The quick maths (show the number)</h3>
+  <div id="quickWrap"></div>
+  <div class="scorebar">
+    <button class="primary" id="checkQuick">Check my answers</button>
+    <span class="pill" id="quickScore">—</span>
+  </div>
+
+  <h3>Part D — Next month: allocate ₹10,00,000</h3>
+  <p>Each channel shows what the NEXT rupees buy — costs rise as you scale, that is the whole game. Put money where the marginal rupees are cheapest. Minimum ₹50,000 and maximum ₹4,50,000 per channel, and the four columns must add up to exactly ₹10,00,000.</p>
+  <div id="allocWrap"></div>
+  <div class="scorebar">
+    <button class="primary" id="checkAlloc">Check my plan</button>
+    <span class="pill" id="allocScore">—</span>
+  </div>
+
+  <h3>Part E — Your plan in words</h3>
+  <p>Five lines maximum, like you'd write to your founder. What you're doing, the numbers behind it, and one thing you will NOT touch.</p>
+  <textarea id="planText" placeholder="e.g. I'm moving ₹2L from X to Y because ... Expected CAC ..., expected new customers ... I am NOT touching Z because ..."></textarea>
+</section>
+
+<!-- ============================= AUDIT -->
+<section id="audit">
+  <h2>Station 4 — Account audit</h2>
+  <p class="lead">This is a live-looking export. Some rows are healthy, some are burning money. For each row pick the action you'd take, then tick every problem you can see across the account.</p>
+  <div id="auditTableWrap"></div>
+  <div class="scorebar">
+    <button class="primary" id="checkAudit">Check my audit</button>
+    <span class="pill" id="auditScore">—</span>
+  </div>
+  <h3>What is broken in this account?</h3>
+  <div id="auditIssuesWrap"></div>
+  <div class="scorebar">
+    <button class="primary" id="checkIssues">Check my list</button>
+    <span class="pill" id="issuesScore">—</span>
+  </div>
+</section>
+
+<!-- ============================= SEND -->
+<section id="send">
+  <h2>What to send back</h2>
+  <div class="card rule">
+    <ol>
+      <li>In <b>meta.html</b>: press <b>Export my work</b> → you get <code>meta-work.json</code>.</li>
+      <li>In <b>google.html</b>: press <b>Export my work</b> → you get <code>google-work.json</code>.</li>
+      <li>On this page: press <b>Export my work</b> below → you get <code>walkthrough-work.json</code>.</li>
+      <li>Email or WhatsApp those three files to your hiring coordinator. If you also take screenshots of your Meta and Google builds, even better.</li>
+    </ol>
+  </div>
+  <div class="card">
+    <b>Before you send — 30-second self-check</b>
+    <ul>
+      <li>Your candidate code is filled in on all three files and matches the one HR gave you.</li>
+      <li>You filled the plan text in this file — five lines, with numbers.</li>
+      <li>You can explain every number out loud: how you got CPL, CAC and ROAS, and why you moved the budget where you did.</li>
+      <li>You noted at least one thing you deliberately did NOT touch.</li>
+    </ul>
+  </div>
+  <div class="card tint">
+    <b>After you send</b>
+    <p>You'll have a 15-minute call. We'll open your files and ask you to explain your structure, your numbers and your decisions. Nothing to prepare beyond being able to explain your own work.</p>
+  </div>
+</section>
+
+</main>
+
+<div class="footerbar">
+  <button class="primary" id="exportAll">Export my work</button>
+  <button class="ghost" id="resetAll">Reset this file</button>
+  <span class="spacer"></span>
+  <span class="pill">Progress: <b id="progress">0%</b></span>
+</div>
+
+<script>
+/* ============================================================
+   WTF Ads Lab — hub station (money + audit). Standalone, offline,
+   no external requests. Candidate-code seeded.
+
+   NOTE on innerHTML: every innerHTML string below is built from
+   file-local constants and numbers derived from those constants
+   (formatted with fmt()/toFixed). Candidate input never reaches
+   innerHTML — typed values are written to inputs/textarea via
+   .value and read back with Number()/String(). So there is no
+   untrusted-HTML path in this file.
+   ============================================================ */
+
+function adsLabSeed(code){
+  const s = String(code || 'WTF-PM-0000').trim().toUpperCase();
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return function(){
+    h |= 0; h = h + 0x6D2B79F5 | 0;
+    let t = Math.imul(h ^ h >>> 15, 1 | h);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+const $ = (id) => document.getElementById(id);
+const STORE = 'adsLab.walkthrough';
+const CODEF  = 'adsLab.code';
+
+let code = localStorage.getItem(CODEF) || '';
+let state = loadState();
+
+function defaultState(){
+  return {
+    candidate_code: '', station: 'walkthrough', money: { metrics: {}, actions: {}, quick: {}, alloc: {}, plan: '' },
+    audit: { actions: {}, issues: [] }, scores: {}, updated_at: null
+  };
+}
+function loadState(){
+  try { const s = JSON.parse(localStorage.getItem(STORE) || 'null'); return s ? Object.assign(defaultState(), s) : defaultState(); }
+  catch(e){ return defaultState(); }
+}
+function save(){ state.updated_at = new Date().toISOString(); localStorage.setItem(STORE, JSON.stringify(state)); updateProgress(); }
+function updateProgress(){
+  let done = 0, total = 0;
+  total += 5; done += Object.keys(state.money.metrics||{}).filter(k=>state.money.metrics[k] && state.money.metrics[k].ok).length;
+  total += 5; done += Object.keys(state.money.actions||{}).length;
+  total += 4; done += Object.keys(state.money.quick||{}).filter(k=>state.money.quick[k] && state.money.quick[k].ok).length;
+  total += 4; done += Object.keys(state.money.alloc||{}).filter(k=>Number(state.money.alloc[k])>0).length;
+  total += 1; done += (state.money.plan||'').trim().length > 40 ? 1 : 0;
+  total += 3; done += Object.keys(state.audit.actions||{}).length;
+  total += 1; done += (state.audit.issues||[]).length ? 1 : 0;
+  $('progress').textContent = Math.round(100*done/total) + '%';
+}
+
+/* ---------------- seeded data ---------------- */
+function buildData(){
+  const rnd = adsLabSeed(code || 'WTF-PM-0000');
+  const R = (a,b) => Math.round(a + rnd()*(b-a));
+  const channels = [
+    { id:'meta_prospecting', name:'Meta — Prospecting', product:'All-access pass (₹24,000)' },
+    { id:'meta_retargeting', name:'Meta — Retargeting',  product:'All-access pass (₹24,000)' },
+    { id:'google_search',    name:'Google — Search',     product:'Walk-in leads' },
+    { id:'google_pmax',      name:'Google — PMax',       product:'₹100 daily pass (app)' },
+    { id:'creators',         name:'Creators / Influencer', product:'Course (₹45,000)' },
+  ];
+  // per-channel generated numbers (deterministic per code)
+  const spend   = [R(380000,460000), R(120000,170000), R(150000,210000), R(180000,240000), R(90000,140000)];
+  const clicks  = spend.map(s => Math.round(s / R(9,17)));
+  const leads   = spend.map((s,i) => Math.round(s / R(180,430)));
+  const qual    = leads.map(l => Math.round(l * R(38,62)/100));
+  const newCust = leads.map((l,i) => Math.round(l * R(3,7)/100));
+  const repeats = leads.map((l,i) => Math.round(l * R(2,9)/100));
+  const aovNew  = [24000, 24000, 0, 260, 45000];
+  const revNew  = newCust.map((n,i) => n * aovNew[i] + (i===2 ? qual[i]*180 : 0)); // search: walk-ins worth ~₹180 blended to the gym
+  const revTot  = revNew.map((r,i) => Math.round(r * (1 + (repeats[i]*aovNew[i])/Math.max(1,r))));
+  const refunds = revNew.map(r => Math.round(r * R(0.5,2.4)/100));
+  return { channels, spend, clicks, leads, qual, newCust, repeats, revNew, revTot, refunds };
+}
+
+const DATA = buildData();
+const money = () => state.money;
+
+function fmt(n){ return (Math.round(n*100)/100).toLocaleString('en-IN'); }
+function close(a,b,tolAbs,tolPct){
+  if (a === '' || a === null || isNaN(a)) return false;
+  const t = Math.max(tolAbs, Math.abs(b)*tolPct);
+  return Math.abs(Number(a) - b) <= t;
+}
+
+/* ---------------- Part A: metrics ---------------- */
+const METRIC_DEFS = [
+  { key:'cpl',        label:'CPL (₹ per lead)',              get:(i)=>DATA.spend[i]/DATA.leads[i] },
+  { key:'cpql',       label:'Cost per qualified lead (₹)',   get:(i)=>DATA.spend[i]/DATA.qual[i] },
+  { key:'cac',        label:'CAC — new customers only (₹)',  get:(i)=>DATA.spend[i]/DATA.newCust[i] },
+  { key:'roas',       label:'ROAS — revenue ÷ spend',        get:(i)=>DATA.revTot[i]/DATA.spend[i] },
+  { key:'n2n_roas',   label:'N2N ROAS — new-customer revenue ÷ spend', get:(i)=>DATA.revNew[i]/DATA.spend[i] },
+];
+
+function renderMetrics(){
+  const rows = DATA.channels.map((c,i) => `
+    <tr>
+      <td><b>${c.name}</b><div class="small">${c.product}</div></td>
+      <td>₹${fmt(DATA.spend[i])}</td>
+      <td>${DATA.leads[i]}</td>
+      <td>${DATA.qual[i]}</td>
+      <td>${DATA.newCust[i]}</td>
+      <td>₹${fmt(DATA.revTot[i])}</td>
+      ${METRIC_DEFS.map(m => `<td><input type="number" step="0.01" data-m="${m.key}" data-i="${i}"
+            value="${money().metrics[`${m.key}_${i}`] ? money().metrics[`${m.key}_${i}`].value : ''}">
+            <span class="vf" id="vf_${m.key}_${i}"></span></td>`).join('')}
+    </tr>`).join('');
+  $('perfTableWrap').innerHTML = `
+    <table>
+      <tr><th>Channel</th><th>Spend</th><th>Leads</th><th>Qualified</th><th>New customers</th><th>Revenue (total)</th>
+      ${METRIC_DEFS.map(m=>`<th>${m.label}</th>`).join('')}</tr>
+      ${rows}
+    </table>
+    <p class="small">Fill all 25 cells. ₹ amounts can be rounded to the nearest rupee; ratios to two decimals. Press <b>Check my numbers</b> when done.</p>`;
+  document.querySelectorAll('#perfTableWrap input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const k = `${inp.dataset.m}_${inp.dataset.i}`;
+      money().metrics[k] = { value: inp.value, ok: money().metrics[k] ? money().metrics[k].ok : false };
+      save();
+    });
+  });
+  // restore verdict marks
+  METRIC_DEFS.forEach(m => DATA.channels.forEach((c,i) => {
+    const rec = money().metrics[`${m.key}_${i}`];
+    const el = $(`vf_${m.key}_${i}`);
+    if (el && rec && rec.checked) el.innerHTML = rec.ok ? '<span class="ok">✓</span>' : '<span class="no">✗</span>';
+  }));
+}
+
+function checkMetrics(){
+  let ok = 0, n = 0;
+  METRIC_DEFS.forEach(m => DATA.channels.forEach((c,i) => {
+    const want = m.get(i);
+    const key = `${m.key}_${i}`;
+    const rec = money().metrics[key] || { value:'' };
+    const good = close(rec.value, want, m.key==='roas'||m.key==='n2n_roas' ? 0.05 : 5, m.key==='roas'||m.key==='n2n_roas' ? 0.02 : 0.01);
+    money().metrics[key] = { value: rec.value, ok: good, checked: true };
+    const el = $(`vf_${m.key}_${i}`);
+    if (el) el.innerHTML = good ? '<span class="ok">✓</span>' : '<span class="no">✗</span>';
+    n++; if (good) ok++;
+  }));
+  $('metricsScore').innerHTML = `<b>${ok}/${n}</b> metrics correct`;
+  save();
+}
+
+/* ---------------- Part B: actions ---------------- */
+const ACTION_OPTIONS = ['— pick one —','Keep as is','Fix (tracking/landing)','Scale (30%+ more budget)','Pause / kill'];
+function truthAction(i){
+  // deterministic truth from the data itself
+  const cac = DATA.spend[i]/DATA.newCust[i];
+  const n2n = DATA.revNew[i]/DATA.spend[i];
+  const cpl = DATA.spend[i]/DATA.leads[i];
+  if (i === 4) return 'Fix (tracking/landing)';            // creators: high CPL, weak close → fix flow
+  if (cpl > 330) return 'Fix (tracking/landing)';           // expensive traffic, structure problem
+  if (n2n >= 3.2 && cac < 9000) return 'Scale (30%+ more budget)';
+  if (n2n < 1.1) return 'Pause / kill';
+  return 'Keep as is';
+}
+function renderActions(){
+  $('actionsWrap').innerHTML = `<table>
+    <tr><th>Channel</th><th>Your CAC</th><th>Your N2N ROAS</th><th>Your action</th></tr>
+    ${DATA.channels.map((c,i)=>{
+      const cac = DATA.spend[i]/DATA.newCust[i], n2n = DATA.revNew[i]/DATA.spend[i];
+      const my = money().metrics[`cac_${i}`], mr = money().metrics[`n2n_roas_${i}`];
+      return `<tr><td><b>${c.name}</b></td>
+        <td>${my && my.ok ? '₹'+fmt(cac) : '<span class="small">fill Part A first</span>'}</td>
+        <td>${mr && mr.ok ? fmt(n2n)+'x' : '<span class="small">—</span>'}</td>
+        <td><select data-act="${i}">${ACTION_OPTIONS.map(o=>`<option ${money().actions[i]===o?'selected':''}>${o}</option>`).join('')}</select></td></tr>`;
+    }).join('')}
+  </table>`;
+  document.querySelectorAll('#actionsWrap select').forEach(sel => sel.addEventListener('change', () => {
+    money().actions[sel.dataset.act] = sel.value; save();
+  }));
+}
+
+/* ---------------- Part C: quick maths ---------------- */
+function quickQuestions(){
+  const a = 24000, cpl1 = DATA.spend[0]/DATA.leads[0], close1 = DATA.newCust[0]/DATA.leads[0];
+  const cac1 = cpl1/close1;
+  const dailyPrice = 100, days = 8;
+  return [
+    { id:'q1', text:`All-access pass: CPL ₹${fmt(cpl1)} and ${(close1*100).toFixed(1)}% of leads buy. What is your CAC?`,
+      hint:'CAC = CPL ÷ close rate', answer: cac1, tolAbs: 60, tolPct: 0.02, unit:'₹' },
+    { id:'q2', text:`Same pass at ₹${a.toLocaleString('en-IN')}. Membership delivery + servicing costs 30% of revenue. How many new customers must ₹1 of ad spend buy for the campaign to break even? (answer as ROAS multiple needed at break-even, 2 decimals)`,
+      hint:'Break-even: revenue × 0.70 = spend → ROAS = 1/0.70', answer: 1/0.70, tolAbs: 0.05, tolPct: 0.02, unit:'x' },
+    { id:'q3', text:`Daily pass: ₹${dailyPrice}/day, average buyer uses ${days} days. Cost per purchase-ready install ₹${fmt(DATA.spend[3]/Math.max(1,DATA.newCust[3]))}. What is ROAS? (2 decimals)`,
+      hint:'Revenue per buyer = price × days', answer: (dailyPrice*days)/(DATA.spend[3]/Math.max(1,DATA.newCust[3])), tolAbs: 0.3, tolPct: 0.05, unit:'x' },
+    { id:'q4', text:`Course: ₹45,000 ticket, CPL ₹350, 4% of leads close. What is CAC?`,
+      hint:'CAC = CPL ÷ close rate', answer: 350/0.04, tolAbs: 150, tolPct: 0.02, unit:'₹' },
+  ];
+}
+function renderQuick(){
+  $('quickWrap').innerHTML = quickQuestions().map(q => `
+    <div class="card">
+      <b>${q.text}</b>
+      <div class="scorebar">
+        <input type="number" step="0.01" data-q="${q.id}" value="${money().quick[q.id] ? money().quick[q.id].value : ''}" placeholder="your answer">
+        <span class="small">${q.unit}</span>
+        <span id="qf_${q.id}"></span>
+      </div>
+      <details><summary>Stuck? open the hint</summary><div class="small">${q.hint}</div></details>
+    </div>`).join('');
+  document.querySelectorAll('#quickWrap input').forEach(inp => inp.addEventListener('change', () => {
+    money().quick[inp.dataset.q] = { value: inp.value, ok: money().quick[inp.dataset.q] ? money().quick[inp.dataset.q].ok : false };
+    save();
+  }));
+  quickQuestions().forEach(q => {
+    const rec = money().quick[q.id], el = $('qf_'+q.id);
+    if (rec && rec.checked && el) el.innerHTML = rec.ok ? '<span class="ok">✓ correct</span>' : '<span class="no">✗ not right</span>';
+  });
+}
+function checkQuick(){
+  let ok = 0;
+  quickQuestions().forEach(q => {
+    const rec = money().quick[q.id] || { value:'' };
+    const good = close(rec.value, q.answer, q.tolAbs, q.tolPct);
+    money().quick[q.id] = { value: rec.value, ok: good, checked: true };
+    const el = $('qf_'+q.id);
+    if (el) el.innerHTML = good ? '<span class="ok">✓ correct</span>' : '<span class="no">✗ not right</span>';
+    if (good) ok++;
+  });
+  $('quickScore').innerHTML = `<b>${ok}/${quickQuestions().length}</b> correct`;
+  save();
+}
+
+/* ---------------- Part D: allocation ---------------- */
+function bands(){
+  const rnd = adsLabSeed((code||'X') + '|bands');
+  const R = (a,b) => a + rnd()*(b-a);
+  return [
+    { id:'meta_prospecting', name:'Meta — Prospecting', cpl:[R(210,230), R(270,300), R(350,400)], close:[R(5.0,6.0)/100, R(4.0,4.8)/100, R(3.0,3.6)/100], ticket:24000 },
+    { id:'meta_retargeting', name:'Meta — Retargeting', cpl:[R(95,120), R(150,185)], close:[R(14,18)/100, R(9,12)/100], ticket:24000 },
+    { id:'google_search',    name:'Google — Search',    cpl:[R(180,210), R(240,275), R(320,360)], close:[R(6,8)/100, R(4.5,6)/100, R(3.5,4.5)/100], ticket:24000 },
+    { id:'creators',         name:'Creators / Influencer', cpl:[R(380,450), R(520,620)], close:[R(2.5,3.5)/100, R(1.8,2.6)/100], ticket:45000 },
+  ];
+}
+const BANDS = bands();
+function bandCac(b){ return b.cpl.map((c,i)=> c / b.close[i]); }
+function renderAlloc(){
+  const rows = BANDS.map(b => {
+    const cac = bandCac(b);
+    return `<tr>
+      <td><b>${b.name}</b><div class="small">ticket ₹${b.ticket.toLocaleString('en-IN')}</div></td>
+      <td class="small">${b.cpl.map((c,i)=>`₹${fmt(c)} CPL · ${(b.close[i]*100).toFixed(1)}% close → <b>₹${fmt(cac[i])} CAC</b>`).join('<br>')}</td>
+      <td><input type="number" step="10000" data-alloc="${b.id}"
+            value="${money().alloc[b.id] !== undefined ? money().alloc[b.id] : ''}" placeholder="₹"></td>
+    </tr>`;
+  }).join('');
+  $('allocWrap').innerHTML = `<table>
+      <tr><th>Channel</th><th>What the next rupees buy (marginal bands, cheapest first)</th><th>Your budget</th></tr>
+      ${rows}
+      <tr><td><b>Total</b></td><td class="small">must equal ₹10,00,000</td><td><b id="allocTotal">₹0</b></td></tr>
+    </table>
+    <p class="small">Allocation rules: min ₹50,000, max ₹4,50,000 per channel, total exactly ₹10,00,000. Each band below feeds up to ₹1,50,000 of spend, cheapest band first — so the total you can place across every band is more than the budget. That is the test: some channels (and some bands) should get nothing.</p>`;
+  document.querySelectorAll('#allocWrap input').forEach(inp => inp.addEventListener('input', () => {
+    money().alloc[inp.dataset.alloc] = Number(inp.value || 0); updateAllocTotal(); save();
+  }));
+  updateAllocTotal();
+}
+function updateAllocTotal(){
+  const t = Object.values(money().alloc).reduce((a,b)=>a+Number(b||0),0);
+  const el = $('allocTotal'); if (el) el.textContent = '₹' + fmt(t);
+}
+const BAND_SIZE = 150000;   // each band buys up to ₹1,50,000 of spend
+function channelCapacity(b){ return BAND_SIZE * b.cpl.length; }
+function checkAlloc(){
+  const a = money().alloc;
+  const total = Object.values(a).reduce((x,y)=>x+Number(y||0),0);
+  const errs = [];
+  if (Math.abs(total - 1000000) > 1000) errs.push(`Total must be ₹10,00,000 (currently ₹${fmt(total)}).`);
+  BANDS.forEach(b => {
+    const v = Number(a[b.id] || 0);
+    if (v && v < 50000) errs.push(`${b.name}: below the ₹50,000 minimum.`);
+    if (v > 450000) errs.push(`${b.name}: above the ₹4,50,000 maximum.`);
+    if (v > channelCapacity(b)) errs.push(`${b.name}: ₹${fmt(v)} is more than the published bands support (₹${fmt(channelCapacity(b))}).`);
+  });
+  // efficiency: greedy optimum over marginal CAGs (cheapest first), respecting in-channel band order
+  const marg = [];
+  BANDS.forEach(b => bandCac(b).forEach((cac, i) => marg.push({ channel:b.id, band:i, size: BAND_SIZE, cac })));
+  marg.sort((x,y)=>x.cac-y.cac);
+  let budget = 1000000, optNew = 0;
+  marg.forEach(m => {
+    const take = Math.min(m.size, budget);
+    if (take <= 0) return;
+    budget -= take;
+    optNew += take / m.cac;
+  });
+  let myNew = 0;
+  BANDS.forEach(b => {
+    let left = Number(a[b.id]||0); const cacs = bandCac(b); const cap = channelCapacity(b);
+    cacs.forEach((cac, i) => { const take = Math.min(BAND_SIZE, left); if (take>0){ left -= take; myNew += take/cac; } });
+    if (left > 0) myNew += left / (cacs[cacs.length-1] * 2);   // rupees beyond the published bands are penalised
+  });
+  const eff = optNew ? Math.min(1, myNew/optNew) : 0;
+  money().alloc_verdict = { errors: errs, efficiency: eff, expected_new: myNew, optimum_new: optNew, checked: true };
+  $('allocScore').innerHTML = errs.length
+    ? `<b class="no">${errs.length} rule${errs.length>1?'s':''} broken</b> — ${errs[0]}`
+    : eff >= 0.97 ? `<b class="ok">Excellent plan</b> — ${(eff*100).toFixed(0)}% of the best possible outcome (≈${Math.round(myNew)} new customers)`
+    : eff >= 0.90 ? `<b>Solid</b> — ${(eff*100).toFixed(0)}% of the best possible (≈${Math.round(myNew)} new customers)`
+    : eff >= 0.80 ? `<b>Workable</b> — ${(eff*100).toFixed(0)}% of the best possible`
+    : `<b class="no">Leaving money on the table</b> — ${(eff*100).toFixed(0)}% of the best possible. Look again at which channel's NEXT rupee is cheapest.`;
+  save();
+}
+
+/* ---------------- Station 4: audit ---------------- */
+function auditRows(){
+  const rnd = adsLabSeed((code||'X') + '|audit');
+  const R = (a,b) => a + rnd()*(b-a);
+  const rows = [
+    { name:'NCR | Walk-ins | ASC', spend:184000, leads:520, walkins:96, crm_leads:410, freq:R(1.8,2.4), ctr:R(1.1,1.5), note:'' },
+    { name:'NOIDA | Lead Form | Broad', spend:96000, leads:610, walkins:141, crm_leads:588, freq:R(2.1,2.8), ctr:R(0.9,1.3), note:'' },
+    { name:'Delhi | Retarget | 30d', spend:54000, leads:302, walkins:88, crm_leads:295, freq:R(3.4,4.2), ctr:R(1.6,2.2), note:'frequency climbing' },
+    { name:'Gurgaon | BCA Offer', spend:71000, leads:118, walkins:9, crm_leads:22, freq:R(7.2,9.1), ctr:R(0.3,0.5), note:'creative fatigue' },
+    { name:'Gym Tour | Awareness', spend:38000, leads:41, walkins:1, crm_leads:6, freq:R(5.4,6.6), ctr:R(0.2,0.4), note:'awareness campaign used for leads' },
+    { name:'Search | Brand', spend:22000, leads:290, walkins:62, crm_leads:284, freq:1, ctr:R(6,9), note:'' },
+    { name:'Search | NonBrand | Gym Near Me', spend:118000, leads:342, walkins:47, crm_leads:205, freq:1, ctr:R(2.5,4), note:'brand terms inside non-brand' },
+    { name:'PMax | Walk-ins', spend:67000, leads:180, walkins:38, crm_leads:171, freq:R(3.1,3.8), ctr:R(0.8,1.2), note:'' },
+    { name:'Audience Network | Broad', spend:41500, leads:64, walkins:0, crm_leads:11, freq:R(4.5,5.5), ctr:R(0.15,0.3), note:'junk placements' },
+    { name:'Members Upsell | Email+Ads', spend:26000, leads:204, walkins:0, crm_leads:198, freq:R(1.4,1.9), ctr:R(1.8,2.4), note:'existing members' },
+  ];
+  return rows;
+}
+const AUDIT_ROWS = auditRows();
+function rowTruth(i){
+  const r = AUDIT_ROWS[i];
+  if (i === 3 || i === 4 || i === 8) return 'Pause / kill';
+  if (i === 6) return 'Fix (tracking/landing)';
+  if (i === 1 || i === 5) return 'Scale (30%+ more budget)';
+  return 'Keep as is';
+}
+function renderAudit(){
+  $('auditTableWrap').innerHTML = `<table>
+    <tr><th>Campaign</th><th>Spend</th><th>Leads</th><th>CRM leads</th><th>Walk-ins</th><th>Freq</th><th>CTR %</th><th>What you do</th></tr>
+    ${AUDIT_ROWS.map((r,i)=>`<tr>
+      <td><b>${r.name}</b>${r.note?`<div class="small">${r.note}</div>`:''}</td>
+      <td>₹${r.spend.toLocaleString('en-IN')}</td><td>${r.leads}</td><td>${r.crm_leads}</td><td>${r.walkins}</td>
+      <td>${r.freq.toFixed ? r.freq.toFixed(1) : r.freq}</td><td>${r.ctr.toFixed ? r.ctr.toFixed(2) : r.ctr}</td>
+      <td><select data-audit="${i}">${ACTION_OPTIONS.map(o=>`<option ${state.audit.actions[i]===o?'selected':''}>${o}</option>`).join('')}</select></td>
+    </tr>`).join('')}
+  </table>`;
+  document.querySelectorAll('#auditTableWrap select').forEach(sel => sel.addEventListener('change', () => {
+    state.audit.actions[sel.dataset.audit] = sel.value; save();
+  }));
+}
+const AUDIT_ISSUE_OPTIONS = [
+  'Creative fatigue (frequency high, CTR collapsed) on at least one campaign',
+  'Audience Network / junk placements spending with zero walk-ins',
+  'Brand search terms leaking into the non-brand campaign',
+  'Awareness campaign being judged/used as a lead campaign',
+  'Tracking gap: platform reports far more leads than the CRM received',
+  'Retargeting frequency climbing but still efficient — worth watching',
+  'Members being targeted with new-customer acquisition campaigns',
+  'Nothing to fix — the account is healthy overall',
+];
+const AUDIT_ISSUE_TRUTH = [0,1,2,3,4,6];
+function renderIssues(){
+  $('auditIssuesWrap').innerHTML = AUDIT_ISSUE_OPTIONS.map((o,i)=>{
+    const checked = (state.audit.issues||[]).includes(i) ? 'checked' : '';
+    return `<label style="display:block;margin:6px 0"><input type="checkbox" data-issue="${i}" ${checked}> ${o}</label>`;
+  }).join('') + `<p class="small">Tick every problem you can see. Ticking healthy things costs you points.</p>`;
+  document.querySelectorAll('#auditIssuesWrap input').forEach(cb => cb.addEventListener('change', () => {
+    const set = new Set((state.audit.issues||[]).map(Number));
+    const i = Number(cb.dataset.issue);
+    cb.checked ? set.add(i) : set.delete(i);
+    state.audit.issues = Array.from(set); save();
+  }));
+}
+function checkAudit(){
+  let ok = 0;
+  AUDIT_ROWS.forEach((r,i) => { if (state.audit.actions[i] === rowTruth(i)) ok++; });
+  $('auditScore').innerHTML = `<b>${ok}/10</b> row actions correct`;
+  save();
+}
+function checkIssues(){
+  const picked = new Set((state.audit.issues||[]).map(Number));
+  const truth = new Set(AUDIT_ISSUE_TRUTH);
+  const hits = [...picked].filter(x=>truth.has(x)).length;
+  const falsePositives = [...picked].filter(x=>!truth.has(x)).length;
+  const score = Math.max(0, hits - falsePositives);
+  $('issuesScore').innerHTML = `<b>${score}/6</b> (${hits} found, ${falsePositives} wrong ticks)`;
+  save();
+}
+
+/* ---------------- wiring ---------------- */
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('main section').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); $(b.dataset.tab).classList.add('active');
+  location.hash = b.dataset.tab;
+}));
+function renderAll(){
+  $('code').value = code;
+  $('codeState').textContent = code ? ('code: ' + code) : 'code not set';
+  state.candidate_code = code;
+  renderMetrics(); renderActions(); renderQuick(); renderAlloc(); renderAudit(); renderIssues();
+  $('planText').value = (money().plan || '');
+  updateProgress();
+}
+$('code').addEventListener('change', () => {
+  code = $('code').value.trim().toUpperCase();
+  localStorage.setItem(CODEF, code);
+  state.candidate_code = code;
+  // rebuild the seeded datasets and keep the candidate's typed answers
+  location.reload();
+});
+$('checkMetrics').addEventListener('click', checkMetrics);
+$('checkQuick').addEventListener('click', checkQuick);
+$('checkAlloc').addEventListener('click', checkAlloc);
+$('checkAudit').addEventListener('click', checkAudit);
+$('checkIssues').addEventListener('click', checkIssues);
+$('planText').addEventListener('change', () => { money().plan = $('planText').value; save(); });
+$('planText').addEventListener('blur', () => { money().plan = $('planText').value; save(); });
+
+$('exportAll').addEventListener('click', () => {
+  const out = {
+    candidate_code: code, station: 'walkthrough', exported_at: new Date().toISOString(),
+    performance_data: DATA, bands: BANDS, audit_rows: AUDIT_ROWS,
+    money: money(), audit: state.audit,
+    scores: {
+      metrics: Object.values(money().metrics||{}).filter(x=>x.ok).length,
+      quick: Object.values(money().quick||{}).filter(x=>x.ok).length,
+      alloc: money().alloc_verdict || null,
+    },
+    plan_text: money().plan,
+  };
+  const blob = new Blob([JSON.stringify(out, null, 1)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'walkthrough-work.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+$('resetAll').addEventListener('click', () => {
+  if (!confirm('Reset this file? Your answers in this file will be cleared (the other two files are untouched).')) return;
+  localStorage.removeItem(STORE); state = defaultState(); renderAll(); save();
+});
+
+// boot
+if (location.hash) { const b = document.querySelector(`nav button[data-tab="${location.hash.slice(1)}"]`); if (b) b.click(); }
+renderAll();
+</script>
+</body>
+</html>
