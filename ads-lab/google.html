@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google build station — practice lab</title>
+<style>
+:root{
+  --blue:#1a73e8; --blue-d:#185abc; --ink:#202124; --muted:#5f6368; --line:#dadce0;
+  --hair:#f1f3f4; --good:#137333; --goodbg:#e6f4ea; --bad:#c5221f; --badbg:#fce8e6;
+  --warn:#b26a00; --warnbg:#fef7e0; --ok:#188038; --bg:#f8f9fa;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+[hidden]{display:none !important}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color:var(--ink); background:var(--bg); font-size:14px; line-height:1.45;
+}
+h2{font-size:14.5px;margin:0}
+h3{font-size:13.5px;margin:14px 0 6px}
+p{margin:8px 0}
+/* ---------- sticky header ---------- */
+.stickyhead{position:sticky;top:0;z-index:60;background:#fff;border-bottom:1px solid var(--line)}
+.topbar{display:flex;align-items:center;gap:14px;padding:10px 18px;flex-wrap:wrap}
+.brand{font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.brandmark{display:inline-flex;gap:3px}
+.brandmark i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.brandmark i:nth-child(1){background:#4285f4}
+.brandmark i:nth-child(2){background:#ea4335}
+.brandmark i:nth-child(3){background:#fbbc05}
+.brandmark i:nth-child(4){background:#34a853}
+.brand-sub{color:var(--muted);font-weight:400;font-size:13px}
+.acctline{color:var(--muted);font-size:12.5px;max-width:360px}
+.acctline b{color:var(--ink);font-weight:600}
+.codebox{display:flex;align-items:center;gap:6px;margin-left:auto}
+.codebox label{font-size:12px;color:var(--muted);white-space:nowrap}
+.codebox input{width:150px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:13px}
+.hdr-actions{display:flex;gap:8px;flex-wrap:wrap}
+.sumchip{font-size:12px;background:#e8f0fe;color:#174ea6;border:1px solid #c6dafc;border-radius:999px;padding:3px 10px;white-space:nowrap;font-weight:600}
+.tabs{display:flex;gap:4px;padding:0 14px;overflow-x:auto}
+.tab{border:0;background:none;font:inherit;font-size:13.5px;color:var(--muted);padding:10px 14px 9px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.tab:hover{background:#f8faff}
+.tabchip{font-size:11px;border-radius:999px;padding:1px 7px;background:var(--hair);color:var(--muted);border:1px solid var(--line)}
+.tabchip.good{background:var(--goodbg);color:var(--good);border-color:#ceead6}
+.tabchip.bad{background:var(--badbg);color:var(--bad);border-color:#f6aea9}
+/* ---------- layout ---------- */
+.wrap{max-width:1360px;margin:0 auto;padding:16px 20px 150px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;margin:0 0 14px}
+.cardhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 16px;border-bottom:1px solid var(--hair);flex-wrap:wrap}
+.cardbody{padding:12px 16px}
+.muted{color:var(--muted);font-size:12.5px}
+/* ---------- brief ---------- */
+.brief summary{cursor:pointer;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:14.5px;list-style:none}
+.brief summary::-webkit-details-marker{display:none}
+.brief summary:hover{background:#fafbff}
+.bri-hint{font-weight:400;color:var(--muted);font-size:12px}
+.brief p{font-size:13.5px}
+.brief ul{margin:8px 0 8px 2px;padding-left:20px}
+.brief li{margin:6px 0;font-size:13.5px}
+.tok{background:#e8f0fe;color:#174ea6;border-radius:5px;padding:1px 6px;font-size:12.5px;font-weight:600;white-space:nowrap}
+/* ---------- validation ---------- */
+.vrow{display:grid;grid-template-columns:22px minmax(220px,330px) 1fr;gap:10px;padding:8px 4px;border-top:1px solid var(--hair);font-size:13.5px;border-radius:4px}
+.vrow:first-child{border-top:0}
+.vico{font-weight:700;text-align:center}
+.vrow.pass .vico{color:var(--ok)}
+.vrow.fail .vico{color:#d93025}
+.vrow.warn .vico{color:var(--warn)}
+.vrow.fail{background:#fef8f7}
+.vrow.warn{background:#fffdf5}
+.vlabel{font-weight:500}
+.vdetail{color:var(--muted)}
+.vdetail b{color:#c5221f;font-weight:600}
+.vdetail .fix{color:#c5221f;font-weight:600}
+.vgaps{display:flex;gap:10px;align-items:center;font-size:12.5px;color:var(--muted);padding:2px 4px 8px}
+.vgaps .failn{color:#d93025;font-weight:600}
+.vgaps .warnn{color:var(--warn);font-weight:600}
+.vgaps .passn{color:var(--good);font-weight:600}
+/* ---------- workspace ---------- */
+.work{display:flex;min-height:340px}
+.rail{flex:0 0 200px;border-right:1px solid var(--hair);padding:12px 8px}
+.ritem{display:flex;width:100%;text-align:left;padding:8px 10px;border-radius:8px;border:0;background:none;color:#3c4043;font:inherit;font-size:13.5px;cursor:pointer;margin-bottom:2px;align-items:center;justify-content:space-between;gap:8px}
+.ritem:hover{background:#f8faff}
+.ritem.active{background:#e8f0fe;color:var(--blue);font-weight:600}
+.ritem .rcount{font-size:11.5px;color:var(--muted);font-weight:400}
+.ritem.active .rcount{color:var(--blue)}
+.pane{flex:1;padding:14px 16px;min-width:0}
+.empty{padding:34px 16px;text-align:center;color:var(--muted);font-size:13.5px}
+.empty .big{font-size:15px;color:var(--ink);font-weight:600;margin-bottom:6px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.scrollx{overflow-x:auto}
+/* ---------- tables ---------- */
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th{text-align:left;color:var(--muted);font-weight:500;border-bottom:1px solid var(--line);padding:8px 10px;white-space:nowrap;font-size:12.5px}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--hair);vertical-align:top}
+.tbl tr:hover td{background:#f8fbff}
+.tbl td.actions, .tbl th.actions{text-align:right;white-space:nowrap}
+.grouprow td{background:#fafbfd;font-weight:600;border-bottom:1px solid var(--line)}
+.grouprow .gmeta{font-weight:400;color:var(--muted);font-size:12.5px;margin-left:8px}
+/* ---------- chips & badges ---------- */
+.chip{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;background:var(--hair);border:1px solid var(--line);color:#3c4043;white-space:nowrap}
+.chip.green{background:var(--goodbg);color:var(--good);border-color:#ceead6}
+.chip.red{background:var(--badbg);color:var(--bad);border-color:#f6aea9}
+.chip.amber{background:var(--warnbg);color:var(--warn);border-color:#fde293}
+.chip.blue{background:#e8f0fe;color:#174ea6;border-color:#c6dafc}
+.chip.grey{background:var(--hair);color:var(--muted)}
+.mt{display:inline-block;padding:1px 8px;border-radius:5px;font-size:11.5px;font-weight:600;border:1px solid}
+.mt.broad{background:var(--warnbg);color:var(--warn);border-color:#fde293}
+.mt.phrase{background:#e8f0fe;color:#174ea6;border-color:#c6dafc}
+.mt.exact{background:var(--goodbg);color:var(--good);border-color:#ceead6}
+.negbadge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;background:var(--badbg);color:var(--bad);border:1px solid #f6aea9}
+.pillrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:5px 0}
+.pillrow .k{color:var(--muted);font-size:12px;min-width:80px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+/* ---------- rsa cards ---------- */
+.rsa{border:1px solid var(--line);border-radius:9px;padding:12px 14px;margin:10px 0;background:#fff}
+.rsa h4{margin:0 0 4px;font-size:13.5px}
+.rsa .sub{color:var(--muted);font-size:12px;margin-bottom:8px}
+.adchips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.adchip{border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:12.5px;background:#fdfdff}
+.adchip .c{color:#9aa0a6;font-size:11px;margin-left:6px}
+.adchip.over{border-color:#f6aea9;background:#fef8f7}
+.adchip.over .c{color:#d93025;font-weight:700}
+/* ---------- buttons & fields ---------- */
+.btn{font:inherit;font-size:13px;padding:7px 14px;border-radius:18px;border:1px solid var(--line);background:#fff;color:var(--blue);cursor:pointer;white-space:nowrap}
+.btn:hover{background:#f8fbff;border-color:#c6dafc}
+.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn.primary:hover{background:var(--blue-d)}
+.btn.small{padding:4px 11px;font-size:12px;border-radius:14px}
+.btn.ghost{border-color:transparent}
+.btn.danger{color:#c5221f}
+.btn.restricted{color:#9aa0a6;border-color:#e8eaed;background:#f8f9fa}
+.btn.restricted:hover{background:#f1f3f4}
+.fieldrow{margin:11px 0}
+.fieldrow label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:4px}
+input[type=text],input[type=number],select,textarea{font:inherit;font-size:13.5px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;width:100%;background:#fff;color:var(--ink)}
+textarea{min-height:96px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid #c6dafc;outline-offset:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.chipbtns{display:flex;flex-wrap:wrap;gap:6px}
+.chipbtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-size:12.5px;cursor:pointer;color:#3c4043;font:inherit;font-size:12.5px}
+.chipbtn:hover{background:#f8faff}
+.chipbtn.on{background:#e8f0fe;border-color:var(--blue);color:var(--blue);font-weight:600}
+.cbrow{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:2px 0}
+.cbrow label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);margin:0}
+.inline-err{color:#d93025;font-size:12px;margin-top:3px;display:none}
+.inline-err.show{display:block}
+.rowinput{display:flex;align-items:center;gap:8px;margin:5px 0}
+.rowinput input{flex:1}
+.counter{font-size:11px;color:#9aa0a6;min-width:44px;text-align:right}
+.counter.over{color:#d93025;font-weight:700}
+.counter.near{color:var(--warn)}
+.xbtn{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;padding:2px 5px}
+.xbtn:hover{color:#d93025}
+.drawerhint{background:#fafbfd;border:1px solid var(--hair);border-radius:8px;padding:8px 10px;font-size:12.5px;color:var(--muted);margin:8px 0}
+/* ---------- switch ---------- */
+.switch{position:relative;display:inline-block;width:40px;height:22px;vertical-align:middle}
+.switch input{opacity:0;width:0;height:0}
+.switch .sl{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#dadce0;border-radius:999px;transition:.15s}
+.switch .sl:before{content:"";position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.15s}
+.switch input:checked + .sl{background:var(--blue)}
+.switch input:checked + .sl:before{transform:translateX(18px)}
+/* ---------- drawer ---------- */
+.overlay{position:fixed;inset:0;background:rgba(32,33,36,.32);z-index:110;opacity:0;pointer-events:none;transition:opacity .15s}
+.overlay.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:500px;max-width:94vw;background:#fff;box-shadow:-8px 0 24px rgba(0,0,0,.18);z-index:120;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .18s}
+.drawer.open{transform:none}
+.drawerhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:14px 16px;border-bottom:1px solid var(--hair)}
+.drawerhead h2{margin:0 0 2px}
+.drawerbody{padding:4px 16px 12px;overflow:auto;flex:1}
+.drawerfoot{display:flex;justify-content:space-between;gap:8px;padding:12px 16px;border-top:1px solid var(--hair)}
+.drawerfoot .right{display:flex;gap:8px}
+/* ---------- dock ---------- */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:90;background:#fff;border-top:1px solid var(--line);box-shadow:0 -2px 8px rgba(0,0,0,.06)}
+.dockhead{padding:7px 16px}
+.docktoggle{border:0;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;gap:10px;align-items:center;width:100%;text-align:left}
+.dockbody{max-height:280px;overflow:auto;border-top:1px solid var(--hair);padding:6px 16px 14px}
+.lrow{display:grid;grid-template-columns:74px 40px 108px 1fr 170px;gap:8px;padding:6px 4px;border-top:1px solid var(--hair);font-size:12.5px}
+.lrow:first-child{border-top:0}
+.lrow.err{background:#fef8f7;border-radius:6px}
+.lrow .lt{color:var(--muted)}
+.lrow .lstatus.ok{color:var(--ok)}
+.lrow .lstatus.err{color:#d93025;font-weight:700}
+.chev{color:var(--muted)}
+/* ---------- toast ---------- */
+.toast{position:fixed;left:16px;bottom:78px;z-index:150;background:#202124;color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;max-width:440px;box-shadow:0 6px 16px rgba(0,0,0,.3)}
+.toast.ok{background:#137333}
+.toast.err{background:#b3261e}
+.savenote{background:var(--warnbg);border:1px solid #fde293;color:#7a5b00;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:12px}
+.hintline{padding:0 18px 9px;color:var(--muted);font-size:12.5px}
+.hintline b{color:var(--ink)}
+.rowhint{color:var(--muted);font-size:12.5px;margin:2px 0 8px}
+.restrictedrow{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--hair);flex-wrap:wrap}
+.restrictedrow:first-child{border-top:0}
+.restrictedrow .rdesc{font-size:12.5px;color:var(--muted);max-width:520px}
+.kv{display:grid;grid-template-columns:200px 1fr;gap:4px 12px;font-size:13.5px}
+.kv .k{color:var(--muted)}
+@media (max-width:1080px){
+  .rail{flex-basis:168px}
+  .vrow{grid-template-columns:22px minmax(180px,260px) 1fr}
+}
+@media (max-width:900px){
+  .grid2{grid-template-columns:1fr}
+  .work{flex-direction:column}
+  .rail{flex-basis:auto;border-right:0;border-bottom:1px solid var(--hair);display:flex;flex-wrap:wrap;gap:4px}
+  .ritem{width:auto}
+}
+@media print{
+  .topbar,.tabs,.dock,.drawer,.overlay,.toast,.modalveil,.btn,.chipbtn,.noprint{display:none !important}
+  body{background:#fff}
+  .wrap{padding:0;max-width:none}
+  .card{break-inside:avoid;border-color:#bbb}
+  details.brief > div{display:block !important}
+  details.brief summary{list-style:none}
+}
+</style>
+</head>
+<body>
+
+<header class="stickyhead">
+  <div class="topbar">
+    <div class="brand"><span class="brandmark"><i></i><i></i><i></i><i></i></span> Google build station <span class="brand-sub">practice lab</span></div>
+    <div class="acctline" id="hdrAcct"></div>
+    <div class="codebox">
+      <label for="codeInput">Your candidate code</label>
+      <input id="codeInput" spellcheck="false" autocomplete="off" placeholder="WTF-PM-0007">
+    </div>
+    <div class="hdr-actions">
+      <button class="btn" data-a="import">Import saved file</button>
+      <button class="btn" data-a="print">Print / Save as PDF</button>
+      <button class="btn danger" data-a="reset">Reset station</button>
+      <button class="btn primary" data-a="export">Export my work</button>
+    </div>
+    <span class="sumchip" id="hdrSum">Checks 0/0</span>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+  </div>
+  <div class="hintline">Work autosaves in this browser. The numbers in each brief come from your candidate code — they differ for every candidate. When you are done: <b>Export my work</b> and send the downloaded <b>google-work.json</b> back to your reviewer.</div>
+  <nav class="tabs" id="tabbar">
+    <button class="tab" data-a="tab" data-v="g1">G1 · Build a Search campaign <span class="tabchip" id="chip-g1">0/0</span></button>
+    <button class="tab" data-a="tab" data-v="g2">G2 · Fix the account <span class="tabchip" id="chip-g2">0/0</span></button>
+    <button class="tab" data-a="tab" data-v="account">Account &amp; hand-in</button>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="savenote" id="saveNote" hidden></div>
+
+  <section class="tabsec" id="tab-g1">
+    <details class="card brief" open>
+      <summary><span id="briefTitle-g1">G1 — Brief</span><span class="bri-hint">click to collapse</span></summary>
+      <div class="cardbody" id="briefBody-g1"></div>
+    </details>
+    <div class="card">
+      <div class="cardhead"><h2>Live validation — G1</h2><span class="muted">re-runs automatically after every change</span></div>
+      <div class="cardbody" id="valList-g1"></div>
+    </div>
+    <div class="card work">
+      <aside class="rail" id="rail-g1"></aside>
+      <div class="pane" id="pane-g1"></div>
+    </div>
+  </section>
+
+  <section class="tabsec" id="tab-g2" hidden>
+    <details class="card brief" open>
+      <summary><span id="briefTitle-g2">G2 — Brief</span><span class="bri-hint">click to collapse</span></summary>
+      <div class="cardbody" id="briefBody-g2"></div>
+    </details>
+    <div class="card">
+      <div class="cardhead"><h2>Live validation — G2</h2><span class="muted">re-runs automatically after every change</span></div>
+      <div class="cardbody" id="valList-g2"></div>
+    </div>
+    <div class="card work">
+      <aside class="rail" id="rail-g2"></aside>
+      <div class="pane" id="pane-g2"></div>
+    </div>
+  </section>
+
+  <section class="tabsec" id="tab-account" hidden>
+    <div class="card">
+      <div class="cardhead"><h2>Account (read-only)</h2><span class="muted">seeded from your candidate code — nothing typed by hand</span></div>
+      <div class="cardbody" id="acctBody"></div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><h2>Restricted surfaces</h2><span class="muted">shown on purpose — never hidden</span></div>
+      <div class="cardbody" id="acctRestricted"></div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><h2>Hand in</h2></div>
+      <div class="cardbody" id="acctHandin"></div>
+    </div>
+  </section>
+</main>
+
+<div class="dock">
+  <div class="dockhead">
+    <button class="docktoggle" data-a="dock">
+      <span>What you've done — your actions in this station</span>
+      <span class="chip" id="dockCount">0</span>
+      <span class="muted" id="dockLast"></span>
+      <span class="muted" id="saveState"></span>
+      <span class="chev" id="dockChev">▸</span>
+    </button>
+  </div>
+  <div class="dockbody" id="dockBody" hidden></div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true">
+  <div class="drawerhead">
+    <div><h2 id="drawerTitle">Edit</h2><div class="muted" id="drawerSub"></div></div>
+    <button class="xbtn" data-a="drawer-close" title="Close">✕</button>
+  </div>
+  <div class="drawerbody" id="drawerBody"></div>
+  <div class="drawerfoot" id="drawerFoot"></div>
+</aside>
+
+<div id="toast" class="toast" hidden></div>
+
+<script>
+'use strict';
+/* ==================================================================
+   Google build station — the Google half of the Ads Lab.
+   ONE self-contained file: no server, no network calls, no libraries.
+   Everything (state + validation) lives in this page; it works by
+   double-clicking the file. State autosaves to this browser's
+   localStorage and can be exported as google-work.json.
+   ================================================================== */
+
+/* ------------------------------------------------------------------
+   tiny helpers
+   ------------------------------------------------------------------ */
+function $(sel, root){ return (root || document).querySelector(sel); }
+function $$(sel, root){ return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function fmt(n){ var x = Number(n); if (!isFinite(x)) x = 0; return x.toLocaleString('en-IN'); }
+function nowTs(){ return new Date().toISOString(); }
+function clockTime(ts){ var d = new Date(ts); if (isNaN(d.getTime())) return ''; return d.toTimeString().slice(0, 8); }
+function strLen(x){ return String(x == null ? '' : x).length; }
+function getPath(obj, path){ return path.split('.').reduce(function(o, k){ return o == null ? undefined : o[k]; }, obj); }
+function setPath(obj, path, val){
+  var parts = path.split('.'), o = obj;
+  for (var i = 0; i < parts.length - 1; i++){ if (typeof o[parts[i]] !== 'object' || o[parts[i]] === null) o[parts[i]] = {}; o = o[parts[i]]; }
+  o[parts[parts.length - 1]] = val;
+}
+
+/* ------------------------------------------------------------------
+   candidate-code seeding helper (from the station contract, verbatim)
+   ------------------------------------------------------------------ */
+function adsLabSeed(code){
+  const s = String(code || 'WTF-PM-0000').trim().toUpperCase();
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return function(){ // mulberry32
+    h |= 0; h = h + 0x6D2B79F5 | 0;
+    let t = Math.imul(h ^ h >>> 15, 1 | h);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ------------------------------------------------------------------
+   constants — platform rules and plain-language vocabularies
+   ------------------------------------------------------------------ */
+var DEFAULT_CODE = 'WTF-PM-0000';
+var STORE_KEY = 'adsLab.google';
+var CODE_KEY = 'adsLab.code';
+var VERSION = 2;
+
+var PLATFORM = {
+  headlineMax: 30, headlineMin: 3, headlineCap: 15,
+  descMax: 90, descMin: 2, descCap: 4,
+  sitelinkMax: 25, sitelinkDescMax: 35, calloutMax: 25,
+  keywordMax: 80
+};
+
+var INTENT_LABEL = { brand: 'Brand', nonbrand: 'Non-brand (generic)', competitor: 'Competitor', other: 'Other' };
+var INTENT_MATCH = { brand: ['exact', 'phrase'], nonbrand: ['phrase', 'broad'], competitor: ['phrase', 'exact'] };
+var MATCH_TYPES = ['broad', 'phrase', 'exact'];
+var GEO_OPTIONS = ['Noida', 'Greater Noida', 'Ghaziabad', 'Gurugram', 'Faridabad', 'Delhi NCR', 'All India'];
+var LANG_OPTIONS = ['English', 'Hindi'];
+var CAMPAIGN_TYPES = ['Search', 'Performance Max', 'Display', 'Demand Gen'];
+var BID_STRATEGIES = ['Maximize clicks', 'Maximize conversions', 'Target CPA', 'Target ROAS', 'Manual CPC'];
+var STATUSES = ['Enabled', 'Paused'];
+var CONV_CATEGORIES = ['Book appointment', 'Purchase', 'Lead', 'Sign-up', 'Contact', 'Page view', 'Store visit'];
+var CONV_SOURCES = ['Website', 'Google Ads', 'Analytics', 'Import'];
+var CONV_STATUSES = ['Enabled', 'Removed'];
+var BRAND_TOKENS = ['wtf'];
+var IRRELEVANT_TOKENS = ['job', 'vacancy', 'salary', 'free', 'download', 'pdf', 'intern', 'career', 'course', 'opening'];
+
+/* ------------------------------------------------------------------
+   per-candidate numbers — everything variable derives from the code
+   ------------------------------------------------------------------ */
+function deriveBrief(code){
+  const rnd = adsLabSeed(code);
+  const pick = function(arr){ return arr[Math.floor(rnd() * arr.length)]; };
+  var area = pick(['Noida Sector 62', 'Noida Sector 18', 'Noida Sector 137', 'Greater Noida West', 'Noida Extension']);
+  var volume = 8 + Math.floor(rnd() * 7);                  /* 8..14 tracked walk-ins / month  */
+  var budgetCap = 1000 + Math.round(rnd() * 8) * 250;      /* 1000..3000 ₹/day cap            */
+  var cpaCeiling = 350 + Math.round(rnd() * 10) * 25;      /* 350..600 ₹ per booked walk-in   */
+  var hex = Math.floor(rnd() * 65536).toString(16).toUpperCase();
+  while (hex.length < 4) hex = '0' + hex;
+  var targetConvName = pick(['Book a walk-in', 'Free trial day pass', 'Front-desk club booking']) + ' — ' + area;
+  var g2Budget = 1000 + Math.round(rnd() * 4) * 250;
+  var slug = area.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return {
+    code: code, area: area, club: 'WTF Gyms ' + area,
+    volume: volume, budgetCap: budgetCap, cpaCeiling: cpaCeiling,
+    accountId: 'act-g-' + hex, targetConvName: targetConvName, g2Budget: g2Budget, slug: slug
+  };
+}
+
+function seedConversions(b){
+  return [
+    { id: 'cv_walkin', name: b.targetConvName, category: 'Book appointment', source: 'Website', primary_for_goal: false, status: 'Enabled' },
+    { id: 'cv_pass', name: 'All-access pass (online)', category: 'Purchase', source: 'Website', primary_for_goal: true, status: 'Enabled' },
+    { id: 'cv_page', name: 'Thank-you page view', category: 'Page view', source: 'Google Ads', primary_for_goal: false, status: 'Enabled' }
+  ];
+}
+
+/* the pre-loaded account for G2 — five planted problems live in here */
+function seedG2(b){
+  return {
+    campaign: {
+      id: 'cmp_seed', name: 'Search — Walk-in leads · ' + b.area, type: 'Search',
+      daily_budget: b.g2Budget, bid_strategy: 'Target CPA', target_cpa: 0, status: 'Enabled',
+      geo_targets: ['All India'], languages: ['English'],
+      networks: { search: true, search_partners: false, display: false }, protected: true
+    },
+    adgroups: [
+      { id: 'ag_generic', name: 'Generic — gym near me', intent: 'nonbrand', status: 'Enabled', protected: true },
+      { id: 'ag_brand', name: 'Brand', intent: 'brand', status: 'Enabled', protected: true }
+    ],
+    keywords: [
+      { id: 'kw_g1', adgroup_id: 'ag_generic', text: 'gym near me', match_type: 'broad', is_negative: false, status: 'Enabled' },
+      { id: 'kw_g2', adgroup_id: 'ag_generic', text: 'fitness centre near me', match_type: 'broad', is_negative: false, status: 'Enabled' },
+      { id: 'kw_g3', adgroup_id: 'ag_brand', text: b.club.toLowerCase(), match_type: 'exact', is_negative: false, status: 'Enabled' }
+    ],
+    rsas: [
+      { id: 'rsa_generic', adgroup_id: 'ag_generic',
+        headlines: ['WTF Gyms ' + b.area, 'Book a walk-in today'],
+        descriptions: ['Walk in, meet a coach and see the floor. No pressure.', 'Strength, cardio and group classes — all in one club.'],
+        final_url: 'wtfgyms.com/' + b.slug, path1: 'walk-in', path2: '', status: 'Enabled', protected: true },
+      { id: 'rsa_brand', adgroup_id: 'ag_brand',
+        headlines: ['WTF Gyms ' + b.area, 'Official club page', 'Book your walk-in'],
+        descriptions: ['The official page for the club. Book a visit in under a minute.', 'Strength, cardio and classes — book a walk-in today.'],
+        final_url: 'wtfgyms.com/' + b.slug, path1: '', path2: '', status: 'Enabled', protected: true }
+    ],
+    assets: [
+      { id: 'sl_1', type: 'SITELINK', text: 'See club timings', description1: 'Open 5 am – 11 pm', description2: '', status: 'Enabled', protected: true },
+      { id: 'sl_2', type: 'SITELINK', text: 'Book a club tour', description1: '', description2: '', status: 'Enabled', protected: true }
+    ]
+  };
+}
+
+function blankBuild(){ return { campaign: null, adgroups: [], keywords: [], rsas: [], assets: [] }; }
+
+function freshState(code){
+  var b = deriveBrief(code);
+  return {
+    version: VERSION, code: code, brief: b, saved_at: null,
+    account: { id: b.accountId, name: 'WTF Gyms — ' + b.area + ' (search account)', currency: 'INR', timezone: 'Asia/Kolkata' },
+    conversions: seedConversions(b),
+    g1: blankBuild(),
+    g2: seedG2(b),
+    log: [{ ts: nowTs(), tab: '—', op: 'Started', entity: 'station', label: 'Station started for ' + code, ok: true }]
+  };
+}
+
+/* ------------------------------------------------------------------
+   state + storage
+   ------------------------------------------------------------------ */
+var state = null;
+var lastVal = { g1: [], g2: [] };
+var ui = { tab: 'g1', pane: { g1: 'campaign', g2: 'campaign' }, dockOpen: false };
+var storageOk = true;
+var idSeq = 0;
+
+function nextId(prefix){ idSeq += 1; return prefix + '_' + Date.now().toString(36) + '_' + idSeq; }
+function normCode(raw){
+  var c = String(raw == null ? '' : raw).trim().toUpperCase().replace(/[^A-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24);
+  return c || DEFAULT_CODE;
+}
+function readCode(){
+  try { var c = localStorage.getItem(CODE_KEY); if (c && String(c).trim()) return normCode(c); }
+  catch (e) { storageOk = false; }
+  return DEFAULT_CODE;
+}
+function saveLocal(){
+  if (!storageOk){ renderSaveState(); return; }
+  state.code = normCode(state.code);
+  state.saved_at = nowTs();
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    localStorage.setItem(CODE_KEY, state.code);
+  } catch (e) {
+    storageOk = false;
+    var n = $('#saveNote');
+    if (n){ n.hidden = false; n.textContent = 'Autosave is unavailable in this browser mode — use Export my work to keep a copy of your station.'; }
+  }
+  renderSaveState();
+}
+function loadLocal(){
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return false;
+    var d = JSON.parse(raw);
+    if (!d || typeof d !== 'object' || d.version !== VERSION || !d.g1 || !d.g2 || !d.brief || !d.account) return false;
+    state = d;
+    if (!Array.isArray(state.log)) state.log = [];
+    if (!Array.isArray(state.conversions)) state.conversions = [];
+    if (!state.g1 || !state.g2) return false;
+    state.code = normCode(state.code);
+    return true;
+  } catch (e) { return false; }
+}
+
+/* ------------------------------------------------------------------
+   flash + action log
+   ------------------------------------------------------------------ */
+var flashTimer = null;
+function flash(kind, text){
+  var t = $('#toast');
+  t.className = 'toast' + (kind === 'ok' ? ' ok' : kind === 'err' ? ' err' : '');
+  t.textContent = text;
+  t.hidden = false;
+  if (flashTimer) { clearTimeout(flashTimer); flashTimer = null; }
+  flashTimer = setTimeout(function(){ t.hidden = true; }, kind === 'ok' ? 5600 : 7000);
+}
+function logAction(tab, op, entity, label, ok, reason){
+  state.log.push({ ts: nowTs(), tab: tab || '—', op: op, entity: entity || '', label: label || '', ok: ok !== false, reason: reason || '' });
+  if (state.log.length > 300) state.log = state.log.slice(-300);
+}
+function restrictedAttempt(surfaceId, label){
+  logAction(ui.tab.toUpperCase(), 'Update', surfaceId, label, false, 'restricted — read-only in this lab; the attempt is logged');
+  saveLocal();
+  renderDock();
+  flash('err', '“' + label + '” is read-only in this lab. The change was rejected and the attempt is logged under “What you’ve done”.');
+}
+
+/* ------------------------------------------------------------------
+   slice helpers (G1 build vs G2 handover account)
+   ------------------------------------------------------------------ */
+function slice(tab){ return tab === 'g1' ? state.g1 : state.g2; }
+function counts(items){
+  var c = { passed: 0, failed: 0, warned: 0, total: items.length };
+  items.forEach(function(i){ if (i.status === 'pass') c.passed++; else if (i.status === 'warn') c.warned++; else c.failed++; });
+  return c;
+}
+function needsCpa(strategy){ return strategy === 'Target CPA'; }
+
+/* ------------------------------------------------------------------
+   render: header, tabs, save state, briefs
+   ------------------------------------------------------------------ */
+function renderSaveState(){
+  var el = $('#saveState');
+  if (!el) return;
+  if (!storageOk){ el.textContent = 'autosave off — export to save'; return; }
+  el.textContent = state && state.saved_at ? ('saved in this browser · ' + clockTime(state.saved_at)) : 'not saved yet';
+}
+function renderHeader(){
+  $('#hdrAcct').innerHTML = '<b>' + esc(state.account.name) + '</b> · offline · every number seeded from your code';
+  var c = counts(lastVal.g1.concat(lastVal.g2));
+  $('#hdrSum').textContent = 'Checks ' + c.passed + '/' + c.total + ' passing';
+  $('#codeInput').value = state.code;
+  renderSaveState();
+}
+function renderTabs(){
+  $$('.tab').forEach(function(t){ t.classList.toggle('active', t.getAttribute('data-v') === ui.tab); });
+  [['g1', '#chip-g1'], ['g2', '#chip-g2']].forEach(function(p){
+    var c = counts(lastVal[p[0]]);
+    var chip = $(p[1]);
+    chip.textContent = c.passed + '/' + c.total;
+    chip.className = 'tabchip' + (c.failed ? ' bad' : ' good');
+  });
+  $('#tab-g1').hidden = ui.tab !== 'g1';
+  $('#tab-g2').hidden = ui.tab !== 'g2';
+  $('#tab-account').hidden = ui.tab !== 'account';
+}
+function chip(text, cls){ return '<span class="chip' + (cls ? ' ' + cls : '') + '">' + esc(text) + '</span>'; }
+function statusChip(s){ return chip(s, s === 'Enabled' ? 'green' : 'grey'); }
+function intentChip(intent){
+  var cls = intent === 'brand' ? 'blue' : intent === 'nonbrand' ? 'amber' : intent === 'competitor' ? 'red' : 'grey';
+  return chip(INTENT_LABEL[intent] || intent, cls);
+}
+function renderBriefs(){
+  var b = state.brief;
+  $('#briefTitle-g1').textContent = 'G1 — Build a Search campaign for walk-in leads · ' + b.club;
+  $('#briefBody-g1').innerHTML =
+    '<p>You are the operator for <b>' + esc(b.club) + '</b> (Noida NCR). The club sells walk-ins: someone taps your ad, then calls or walks in and books a visit at the front desk. Build the Google Search campaign that captures that demand — the way you would in the real Google Ads UI.</p>' +
+    '<p class="muted">This station is seeded from your candidate code <span class="tok">' + esc(state.code) + '</span> — the club, the budget cap and the conversion volume are yours alone.</p>' +
+    '<h3>What this campaign must have (each item is checked live below)</h3>' +
+    '<ul>' +
+    '<li>One <b>Search campaign</b> with a daily budget inside the club’s approved cap of <b>₹' + fmt(b.budgetCap) + '/day</b>.</li>' +
+    '<li><b>Ad groups split by intent</b>: brand · non-brand (generic) · competitor.</li>' +
+    '<li><b>5+ keywords per group</b>, with match types that fit the intent — brand: exact (phrase ok) · non-brand: phrase or broad · competitor: phrase or exact (never broad).</li>' +
+    '<li><b>8+ negatives on the non-brand group</b>: your brand terms (so generic spend never pays for brand clicks) plus irrelevant intents (jobs, free stuff, downloads…).</li>' +
+    '<li>An <b>RSA</b> — responsive search ad, the ad Google mixes from your headlines and descriptions — with <b>8+ headlines ≤30 characters</b> and <b>3+ descriptions ≤90 characters</b>; one RSA per ad group is recommended.</li>' +
+    '<li><b>4+ sitelinks</b>, ≤25 characters each.</li>' +
+    '<li><b>Geo</b>: Noida + at least two more NCR districts. <b>Language</b>: English. <b>Networks</b>: Search only.</li>' +
+    '<li><b>Bid strategy</b> that fits the volume: the account tracked about <b>' + b.volume + ' walk-in bookings in the last 30 days</b>.</li>' +
+    '</ul>' +
+    '<p class="muted">Everything autosaves in this browser. When you are done: <b>Export my work</b> (top right) and send the downloaded <b>google-work.json</b> back.</p>';
+  $('#briefTitle-g2').textContent = 'G2 — Fix the handover account · ' + b.club;
+  $('#briefBody-g2').innerHTML =
+    '<p>This is <b>the club’s existing search account</b>, handed over mid-flight. A few things in it are wrong and have not been fixed. Your job: fix them <b>in place</b> — this is the live campaign, don’t rebuild it. (Deletes on the pre-loaded account are rejected on purpose: the history stays.)</p>' +
+    '<h3>How to work</h3>' +
+    '<ul>' +
+    '<li>Walk the views below (Campaign · Ad groups · Keywords · Ads · Assets · Conversions) and work through the failures in the live validation list — every failure names the field and the reason. Nothing is hidden.</li>' +
+    '<li>Ops flagged two themes in the handover note: <i>“targeting is far too wide”</i> and <i>“the conversion setup is off”</i>.</li>' +
+    '<li>Platform minimums for an ad to serve: <b>3 headlines / 2 descriptions</b>. Target CPA bidding needs a <b>real target above ₹0</b> — ops won’t pay more than <b>₹' + fmt(b.cpaCeiling) + '</b> per booked walk-in.</li>' +
+    '</ul>' +
+    '<p class="muted">Everything autosaves in this browser. The account’s numbers are seeded from <span class="tok">' + esc(state.code) + '</span> — nothing is invented at review time.</p>';
+}
+/* NOTE on innerHTML: every string that reaches innerHTML below is either a
+   literal template, a number formatted by fmt(), or a value passed through
+   esc() (the HTML-escaping helper) — no raw user/imported text is injected. */
+/* ------------------------------------------------------------------
+   render: rails + work surface panes
+   ------------------------------------------------------------------ */
+var RAIL_ITEMS = [
+  ['campaign', 'Campaign'],
+  ['adgroups', 'Ad groups'],
+  ['keywords', 'Keywords'],
+  ['ads', 'Ads (RSA)'],
+  ['assets', 'Assets'],
+  ['conversions', 'Conversions']
+];
+function railCount(tab, pane){
+  var s = slice(tab);
+  if (pane === 'campaign') return s.campaign ? 1 : 0;
+  if (pane === 'adgroups') return s.adgroups.length;
+  if (pane === 'keywords') return s.keywords.length;
+  if (pane === 'ads') return s.rsas.length;
+  if (pane === 'assets') return s.assets.length;
+  if (pane === 'conversions') return state.conversions.length;
+  return 0;
+}
+function renderRails(){
+  ['g1', 'g2'].forEach(function(tab){
+    var host = $('#rail-' + tab);
+    if (!host) return;
+    host.innerHTML = RAIL_ITEMS.map(function(r){
+      var n = railCount(tab, r[0]);
+      return '<button class="ritem' + (ui.pane[tab] === r[0] ? ' active' : '') + '" data-a="pane" data-tab="' + tab + '" data-v="' + r[0] + '">' +
+        '<span>' + r[1] + '</span><span class="rcount">' + (n ? n : '') + '</span></button>';
+    }).join('');
+  });
+}
+function renderPane(){
+  ['g1', 'g2'].forEach(function(tab){
+    var host = $('#pane-' + tab);
+    if (!host) return;
+    var p = ui.pane[tab];
+    if (p === 'campaign') host.innerHTML = campaignPane(tab);
+    else if (p === 'adgroups') host.innerHTML = adgroupsPane(tab);
+    else if (p === 'keywords') host.innerHTML = keywordsPane(tab);
+    else if (p === 'ads') host.innerHTML = adsPane(tab);
+    else if (p === 'assets') host.innerHTML = assetsPane(tab);
+    else if (p === 'conversions') host.innerHTML = conversionsPane(tab);
+  });
+}
+
+/* ---------------- campaign ---------------- */
+function campaignPane(tab){
+  var s = slice(tab);
+  var c = s.campaign;
+  var head = '';
+  if (tab === 'g1'){
+    head = '<div class="btnrow">' +
+      (c ? '<button class="btn primary" data-a="campaign-edit" data-tab="g1">Edit campaign</button>'
+         : '<button class="btn primary" data-a="campaign-new" data-tab="g1">Create campaign</button><span class="rowhint">Start here — one Search campaign for ' + esc(state.brief.club) + '.</span>') +
+      '</div>';
+  } else {
+    head = '<div class="btnrow"><button class="btn" data-a="campaign-edit" data-tab="g2">Edit this campaign</button><span class="rowhint">Fix it in place — this is the live campaign, don’t rebuild it.</span></div>';
+  }
+  if (!c){
+    return head + '<div class="empty"><div class="big">Nothing built yet</div>Create the Search campaign to start — the brief at the top of this tab lists exactly what it needs.</div>';
+  }
+  var n = c.networks || {};
+  var geo = (c.geo_targets || []).length
+    ? c.geo_targets.map(function(g){ return chip(g, g === 'All India' ? 'red' : 'blue'); }).join(' ')
+    : '<span class="muted">none yet</span>';
+  var langs = (c.languages || []).length
+    ? c.languages.map(function(l){ return chip(l, 'blue'); }).join(' ')
+    : '<span class="muted">none yet</span>';
+  var nets = [['Search', n.search], ['Search partners', n.search_partners], ['Display', n.display]]
+    .map(function(x){ return chip(x[0], x[1] ? 'green' : 'grey'); }).join(' ');
+  var cpa = needsCpa(c.bid_strategy)
+    ? ('₹' + fmt(c.target_cpa) + (Number(c.target_cpa) > 0 ? '' : ' <span class="chip red">target missing</span>'))
+    : '—';
+  var row = '<tr>' +
+    '<td><b>' + esc(c.name) + '</b></td>' +
+    '<td>' + chip(c.type, c.type === 'Search' ? 'blue' : 'grey') + '</td>' +
+    '<td>₹' + fmt(c.daily_budget) + ' / day</td>' +
+    '<td>' + esc(c.bid_strategy) + '</td>' +
+    '<td>' + cpa + '</td>' +
+    '<td>' + geo + '</td>' +
+    '<td>' + langs + '</td>' +
+    '<td>' + nets + '</td>' +
+    '<td>' + statusChip(c.status) + '</td>' +
+    '<td class="actions"><button class="btn small" data-a="campaign-edit" data-tab="' + tab + '">Edit</button></td>' +
+    '</tr>';
+  return head + '<div class="scrollx"><table class="tbl"><thead><tr><th>Campaign</th><th>Type</th><th>Daily budget</th><th>Bid strategy</th><th>Target CPA</th><th>Geo targets</th><th>Languages</th><th>Networks</th><th>Status</th><th class="actions"></th></tr></thead><tbody>' + row + '</tbody></table></div>';
+}
+
+/* ---------------- ad groups ---------------- */
+function adgroupsPane(tab){
+  var s = slice(tab);
+  var head = '<div class="btnrow"><button class="btn primary" data-a="adgroup-new" data-tab="' + tab + '">Create ad group</button>' +
+    (s.campaign ? '' : '<span class="rowhint">Create the campaign first.</span>') +
+    (tab === 'g1' ? '<span class="rowhint">Split by intent: brand · non-brand (generic) · competitor.</span>' : '') +
+    '</div>';
+  if (!s.adgroups.length){
+    return head + '<div class="empty"><div class="big">No ad groups yet</div>Ad groups hold your keywords and your ads. Add the first one.</div>';
+  }
+  var rows = s.adgroups.map(function(ag){
+    var kws = s.keywords.filter(function(k){ return k.adgroup_id === ag.id && !k.is_negative; }).length;
+    var neg = s.keywords.filter(function(k){ return k.adgroup_id === ag.id && k.is_negative; }).length;
+    return '<tr><td><b>' + esc(ag.name) + '</b></td><td>' + intentChip(ag.intent) + '</td><td>' + esc(s.campaign ? s.campaign.name : '—') + '</td><td>' + kws + ' keywords · ' + neg + ' negatives</td><td>' + statusChip(ag.status) + '</td><td class="actions"><button class="btn small" data-a="adgroup-edit" data-tab="' + tab + '" data-id="' + esc(ag.id) + '">Edit</button></td></tr>';
+  }).join('');
+  return head + '<div class="scrollx"><table class="tbl"><thead><tr><th>Ad group</th><th>Intent</th><th>Campaign</th><th>Contents</th><th>Status</th><th class="actions"></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+
+/* ---------------- keywords (grouped under their ad group) ---------------- */
+function keywordsPane(tab){
+  var s = slice(tab);
+  var head = '<div class="btnrow">' +
+    '<button class="btn primary" data-a="keyword-new" data-tab="' + tab + '">Add keyword</button>' +
+    '<button class="btn" data-a="negatives-batch" data-tab="' + tab + '">Add negatives (paste a list)</button>' +
+    (tab === 'g1' ? '<span class="rowhint">Brand: exact (phrase ok) · non-brand: phrase or broad · competitor: phrase or exact.</span>' : '') +
+    '</div>';
+  if (!s.adgroups.length){
+    return head + '<div class="empty"><div class="big">No ad groups yet</div>Keywords live inside ad groups — create one first.</div>';
+  }
+  if (!s.keywords.length){
+    return head + '<div class="empty"><div class="big">No keywords yet</div>Add keywords per ad group. Negatives are added the same way, or with the batch helper.</div>';
+  }
+  var parts = s.adgroups.map(function(ag){
+    var kws = s.keywords.filter(function(k){ return k.adgroup_id === ag.id; });
+    var pos = kws.filter(function(k){ return !k.is_negative; });
+    var neg = kws.filter(function(k){ return k.is_negative; });
+    var rows = kws.map(function(k){
+      return '<tr><td class="mono">' + (k.is_negative ? '– ' : '') + esc(k.text) + '</td>' +
+        '<td><span class="mt ' + esc(k.match_type) + '">' + esc(k.match_type) + '</span></td>' +
+        '<td>' + (k.is_negative ? '<span class="negbadge">negative</span>' : '') + '</td>' +
+        '<td>' + statusChip(k.status) + '</td>' +
+        '<td class="actions"><button class="btn small" data-a="keyword-edit" data-tab="' + tab + '" data-id="' + esc(k.id) + '">Edit</button></td></tr>';
+    }).join('');
+    return '<tr class="grouprow"><td colspan="5">' + esc(ag.name) + ' <span class="gmeta">' + esc(INTENT_LABEL[ag.intent] || ag.intent) + ' · ' + pos.length + ' keywords · ' + neg.length + ' negatives</span></td></tr>' + rows;
+  }).join('');
+  return head + '<div class="scrollx"><table class="tbl"><thead><tr><th>Keyword</th><th>Match type</th><th></th><th>Status</th><th class="actions"></th></tr></thead><tbody>' + parts + '</tbody></table></div>';
+}
+
+/* ---------------- ads (responsive search ads) ---------------- */
+function adchip(text, max){
+  var over = strLen(text) > max;
+  return '<span class="adchip' + (over ? ' over' : '') + '">' + esc(text) + '<span class="c">' + strLen(text) + '/' + max + '</span></span>';
+}
+function adsPane(tab){
+  var s = slice(tab);
+  var head = '<div class="btnrow"><button class="btn primary" data-a="rsa-new" data-tab="' + tab + '">Create responsive search ad</button>' +
+    '<span class="rowhint">Headlines ≤30 characters · descriptions ≤90 · one RSA per ad group recommended.</span></div>';
+  if (!s.adgroups.length){
+    return head + '<div class="empty"><div class="big">No ad groups yet</div>Ads live inside ad groups — create one first.</div>';
+  }
+  var bodies = s.adgroups.map(function(ag){
+    var rsas = s.rsas.filter(function(r){ return r.adgroup_id === ag.id; });
+    var inner = rsas.length
+      ? rsas.map(function(r){
+          return '<div class="sub">RSA · ' + esc(r.status) + (r.final_url ? ' · <span class="mono">' + esc(r.final_url) + '</span>' : '') +
+            ' <button class="btn small" data-a="rsa-edit" data-tab="' + tab + '" data-id="' + esc(r.id) + '">Edit ad</button></div>' +
+            '<div class="rowhint">Headlines (' + r.headlines.length + ')</div><div class="adchips">' + r.headlines.map(function(h){ return adchip(h, PLATFORM.headlineMax); }).join('') + '</div>' +
+            '<div class="rowhint">Descriptions (' + r.descriptions.length + ')</div><div class="adchips">' + r.descriptions.map(function(d){ return adchip(d, PLATFORM.descMax); }).join('') + '</div>';
+        }).join('')
+      : '<div class="empty" style="padding:14px">No ad in this group yet — <button class="btn small primary" data-a="rsa-new" data-tab="' + tab + '" data-id="' + esc(ag.id) + '">Create the RSA</button></div>';
+    return '<div class="rsa"><h4>' + esc(ag.name) + ' ' + intentChip(ag.intent) + '</h4>' + inner + '</div>';
+  }).join('');
+  return head + bodies;
+}
+
+/* ---------------- assets (sitelinks + callouts) ---------------- */
+function assetsPane(tab){
+  var s = slice(tab);
+  var head = '<div class="btnrow">' +
+    '<button class="btn primary" data-a="asset-new" data-tab="' + tab + '" data-type="SITELINK">Add sitelink</button>' +
+    '<button class="btn" data-a="asset-new" data-tab="' + tab + '" data-type="CALLOUT">Add callout</button>' +
+    (tab === 'g1' ? '<span class="rowhint">Aim for 4+ sitelinks, ≤25 characters each.</span>' : '') +
+    '</div>';
+  function table(rows, emptyMsg){
+    if (!rows.length) return '<div class="empty" style="padding:14px">' + emptyMsg + '</div>';
+    return '<div class="scrollx"><table class="tbl"><thead><tr><th>Text</th><th>Description 1</th><th>Description 2</th><th>Status</th><th class="actions"></th></tr></thead><tbody>' +
+      rows.map(function(a){
+        return '<tr><td><b>' + esc(a.text) + '</b></td><td>' + esc(a.description1 || '—') + '</td><td>' + esc(a.description2 || '—') + '</td><td>' + statusChip(a.status) + '</td><td class="actions"><button class="btn small" data-a="asset-edit" data-tab="' + tab + '" data-id="' + esc(a.id) + '">Edit</button></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  return head +
+    '<h3>Sitelinks</h3>' + table(s.assets.filter(function(a){ return a.type === 'SITELINK'; }), 'No sitelinks yet.') +
+    '<h3>Callouts</h3>' + table(s.assets.filter(function(a){ return a.type === 'CALLOUT'; }), 'No callouts yet (optional — sitelinks are the required ones).');
+}
+
+/* ---------------- conversions (account level) ---------------- */
+function conversionsPane(tab){
+  var note = '<div class="drawerhint"><b>Why “primary for goal” matters:</b> Google Ads only optimises towards — and only counts as conversions — the actions marked <b>primary</b>. If the action that matters (a booked walk-in) is not primary, smart bidding is flying blind: it chases whatever action is primary instead, and the conversion numbers you report are not the walk-ins you actually got.</div>';
+  var rows = state.conversions.map(function(cv){
+    return '<tr><td><b>' + esc(cv.name) + '</b></td><td>' + esc(cv.category) + '</td><td>' + esc(cv.source) + '</td>' +
+      '<td><label class="switch" title="Primary for goal"><input type="checkbox" data-a="conv-toggle" data-id="' + esc(cv.id) + '"' + (cv.primary_for_goal ? ' checked' : '') + '><span class="sl"></span></label></td>' +
+      '<td>' + statusChip(cv.status) + '</td>' +
+      '<td class="actions"><button class="btn small" data-a="conv-edit" data-tab="' + tab + '" data-id="' + esc(cv.id) + '">Edit</button></td></tr>';
+  }).join('');
+  return note + '<div class="btnrow"><button class="btn primary" data-a="conv-new" data-tab="' + tab + '">Create conversion action</button><span class="rowhint">The toggle flips “primary for goal” directly — a booked walk-in is the action this account lives on.</span></div>' +
+    '<div class="scrollx"><table class="tbl"><thead><tr><th>Conversion action</th><th>Category</th><th>Source</th><th>Primary for goal</th><th>Status</th><th class="actions"></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+
+/* ------------------------------------------------------------------
+   render: validation list + dock + account tab
+   ------------------------------------------------------------------ */
+function vrowHtml(it){
+  var ico = it.status === 'pass' ? '✓' : it.status === 'warn' ? '!' : '✕';
+  var detail = esc(it.detail || '');
+  if (it.blocks_export) detail += (detail ? ' ' : '') + '<span class="fix">· export stays locked until this is fixed</span>';
+  return '<div class="vrow ' + it.status + '"><div class="vico">' + ico + '</div><div class="vlabel">' + esc(it.label) + '</div><div class="vdetail">' + detail + '</div></div>';
+}
+function renderValidation(){
+  [['g1', '#valList-g1'], ['g2', '#valList-g2']].forEach(function(p){
+    var items = lastVal[p[0]];
+    var host = $(p[1]);
+    if (!items.length){ host.innerHTML = '<div class="muted">No checks loaded yet.</div>'; return; }
+    var c = counts(items);
+    var gaps = '<span class="passn">' + c.passed + ' passing</span>';
+    if (c.failed) gaps += '<span>·</span><span class="failn">' + c.failed + ' failing</span>';
+    if (c.warned) gaps += '<span>·</span><span class="warnn">' + c.warned + ' to look at</span>';
+    gaps += '<span>·</span><span>fix the red items — they are exactly what the reviewer checks</span>';
+    host.innerHTML = '<div class="vgaps">' + gaps + '</div>' + items.map(vrowHtml).join('');
+  });
+}
+function renderDock(){
+  var log = state.log || [];
+  $('#dockCount').textContent = log.length;
+  var last = log.length ? log[log.length - 1] : null;
+  $('#dockLast').textContent = last ? (last.op + ' · ' + (last.label || last.entity)) : '';
+  $('#dockChev').textContent = ui.dockOpen ? '▾' : '▸';
+  $('#dockBody').hidden = !ui.dockOpen;
+  var rows = log.slice(-120).map(function(l){
+    var status = l.ok ? 'ok' : ('error' + (l.reason ? ' — ' + l.reason : ''));
+    return '<div class="lrow' + (l.ok ? '' : ' err') + '">' +
+      '<span class="lt">' + clockTime(l.ts) + '</span>' +
+      '<span>' + esc(l.tab || '') + '</span>' +
+      '<span>' + esc(l.op) + ' ' + esc(l.entity) + '</span>' +
+      '<span>' + esc(l.label || '') + '</span>' +
+      '<span class="lstatus ' + (l.ok ? 'ok' : 'err') + '">' + esc(status) + '</span></div>';
+  }).join('');
+  $('#dockBody').innerHTML = rows || '<div class="muted">Nothing yet.</div>';
+  if (ui.dockOpen){ var b = $('#dockBody'); b.scrollTop = b.scrollHeight; }
+}
+function acctRow(k, v){ return '<div class="k">' + k + '</div><div>' + v + '</div>'; }
+function renderAccount(){
+  var b = state.brief;
+  $('#acctBody').innerHTML =
+    '<div class="kv">' +
+    acctRow('Account ID', esc(state.account.id)) +
+    acctRow('Account name', esc(state.account.name)) +
+    acctRow('Currency', esc(state.account.currency)) +
+    acctRow('Timezone', esc(state.account.timezone)) +
+    '</div>' +
+    '<p class="muted">Read-only everywhere. The station runs offline — these fields are seeded from your candidate code <span class="tok">' + esc(state.code) + '</span>, never typed by hand.</p>' +
+    '<h3>Your seeded numbers</h3><div class="kv">' +
+    acctRow('Club', esc(b.club)) +
+    acctRow('Tracked walk-ins / month (last 30 days)', '~' + b.volume) +
+    acctRow('G1 daily budget cap', '₹' + fmt(b.budgetCap) + ' / day') +
+    acctRow('Cost per booked walk-in (ops ceiling)', '₹' + fmt(b.cpaCeiling)) +
+    '</div>';
+  var surfaces = [
+    ['account_billing', 'Billing &amp; payments', 'Budgets of record, payment profiles, invoices.'],
+    ['account_settings', 'Account settings', 'Conversion tracking setup, auto-tagging, account-level exclusions.'],
+    ['user_management', 'User management', 'Who else can access the account, and what they are allowed to do.']
+  ];
+  $('#acctRestricted').innerHTML =
+    '<p>In a real account you would have these surfaces. This lab keeps them <b>read-only on purpose</b> — any change request is rejected and logged under “What you’ve done”. They are shown here, never hidden.</p>' +
+    surfaces.map(function(s){
+      return '<div class="restrictedrow"><div><b>' + s[1] + '</b><div class="rdesc">' + s[2] + '</div></div>' +
+        '<div><span class="chip grey">read-only</span> <button class="btn small restricted" data-a="restricted" data-surface="' + s[0] + '" data-label="' + s[1] + '">Request a change</button></div></div>';
+    }).join('');
+  $('#acctHandin').innerHTML =
+    '<p>When you are done: click <b>Export my work</b> and send the downloaded <b>google-work.json</b> to your reviewer. It carries your candidate code, everything you built in both tabs, the validation results and the timestamps.</p>' +
+    '<p>For screenshots use <b>Print / Save as PDF</b> (or Ctrl/Cmd+P) — the page lays itself out for print.</p>' +
+    '<div class="btnrow"><button class="btn primary" data-a="export">Export my work</button><button class="btn" data-a="print">Print / Save as PDF</button><button class="btn danger" data-a="reset">Reset station</button></div>';
+}
+
+/* ------------------------------------------------------------------
+   render everything
+   ------------------------------------------------------------------ */
+function renderAll(){
+  lastVal = { g1: validateG1(), g2: validateG2() };
+  renderHeader();
+  renderTabs();
+  renderBriefs();
+  renderValidation();
+  renderRails();
+  renderPane();
+  renderDock();
+  renderAccount();
+  updateExportButton();
+}
+/* ------------------------------------------------------------------
+   drawer engine — create/edit forms, field-level errors, save
+   ------------------------------------------------------------------ */
+var drawer = null; /* { kind, tab, mode, id, type, draft, errors, title, sub } */
+
+function openDrawer(spec){
+  spec.errors = {};
+  drawer = spec;
+  $('#drawerTitle').textContent = spec.title || 'Edit';
+  $('#drawerSub').textContent = spec.sub || '';
+  renderDrawer();
+  $('#overlay').classList.add('show');
+  $('#drawer').classList.add('open');
+}
+function closeDrawer(){
+  drawer = null;
+  $('#overlay').classList.remove('show');
+  $('#drawer').classList.remove('open');
+}
+function renderDrawer(){
+  if (!drawer) return;
+  $('#drawerBody').innerHTML = drawerFormHtml(drawer);
+  $('#drawerFoot').innerHTML = drawerFootHtml(drawer);
+  applyDrawerErrors();
+  refreshCounters();
+}
+function applyDrawerErrors(){
+  if (!drawer) return;
+  $$('#drawerBody [data-err]').forEach(function(n){ n.className = 'inline-err'; n.textContent = ''; });
+  $$('#drawerBody [data-name]').forEach(function(n){ if (n.style) n.style.borderColor = ''; });
+  Object.keys(drawer.errors).forEach(function(f){
+    var msg = $('#drawerBody [data-err="' + f + '"]');
+    if (msg){ msg.className = 'inline-err show'; msg.textContent = drawer.errors[f]; }
+    var inp = $('#drawerBody [data-name="' + f + '"]');
+    if (inp && inp.style) inp.style.borderColor = '#d93025';
+  });
+}
+function syncInputsToDraft(){
+  if (!drawer) return;
+  $$('#drawerBody input[data-name], #drawerBody textarea[data-name], #drawerBody select[data-name]').forEach(function(el){
+    if (el.getAttribute('data-rsa')) return;
+    var n = el.getAttribute('data-name');
+    if (el.type === 'checkbox') setPath(drawer.draft, n, el.checked);
+    else if (el.type === 'number') setPath(drawer.draft, n, el.value === '' ? '' : Number(el.value));
+    else setPath(drawer.draft, n, el.value);
+  });
+}
+function snapshotRsa(){
+  if (!drawer || drawer.kind !== 'rsa') return;
+  drawer.draft.headlines = $$('#drawerBody [data-rsa="headline"]').map(function(i){ return i.value; });
+  drawer.draft.descriptions = $$('#drawerBody [data-rsa="description"]').map(function(i){ return i.value; });
+}
+function setCounter(span, len, max){
+  span.textContent = len + '/' + max;
+  span.className = 'counter' + (len > max ? ' over' : (len > max * 0.85 ? ' near' : ''));
+}
+function refreshCounters(){
+  $$('#drawerBody [data-count]').forEach(function(inp){
+    var max = Number(inp.getAttribute('data-count'));
+    var span = $('#drawerBody [data-for="' + inp.getAttribute('data-name') + '"]');
+    if (span) setCounter(span, strLen(inp.value), max);
+  });
+}
+
+/* ---------- form field builders ---------- */
+function fText(name, label, value, hint){
+  return '<div class="fieldrow"><label>' + label + '</label><input type="text" data-name="' + name + '" value="' + esc(value == null ? '' : value) + '"><div class="inline-err" data-err="' + name + '"></div>' + (hint ? '<div class="muted">' + hint + '</div>' : '') + '</div>';
+}
+function fNum(name, label, value, hint){
+  return '<div class="fieldrow"><label>' + label + '</label><input type="number" data-name="' + name + '" value="' + esc(value == null ? '' : value) + '" min="0" step="1"><div class="inline-err" data-err="' + name + '"></div>' + (hint ? '<div class="muted">' + hint + '</div>' : '') + '</div>';
+}
+function fSel(name, label, options, value){
+  var opts = options.map(function(o){
+    var v = Array.isArray(o) ? o[0] : o, lbl = Array.isArray(o) ? o[1] : o;
+    return '<option value="' + esc(v) + '"' + (String(value) === String(v) ? ' selected' : '') + '>' + esc(lbl) + '</option>';
+  }).join('');
+  return '<div class="fieldrow"><label>' + label + '</label><select data-name="' + name + '">' + opts + '</select><div class="inline-err" data-err="' + name + '"></div></div>';
+}
+function fChips(name, label, options, selected){
+  var sel = selected || [];
+  return '<div class="fieldrow"><label>' + label + '</label><div class="chipbtns">' +
+    options.map(function(o){ return '<button type="button" class="chipbtn' + (sel.indexOf(o) >= 0 ? ' on' : '') + '" data-a="chip" data-name="' + name + '" data-val="' + esc(o) + '">' + esc(o) + '</button>'; }).join('') +
+    '</div><div class="inline-err" data-err="' + name + '"></div></div>';
+}
+function fCheck(name, label, checked){
+  return '<div class="fieldrow"><div class="cbrow"><label><input type="checkbox" data-name="' + name + '"' + (checked ? ' checked' : '') + '> ' + label + '</label></div><div class="inline-err" data-err="' + name + '"></div></div>';
+}
+function counterRow(name, value, max){
+  var len = strLen(value);
+  var cls = len > max ? ' over' : (len > max * 0.85 ? ' near' : '');
+  return '<div class="rowinput"><input type="text" data-name="' + name + '" data-count="' + max + '" value="' + esc(value) + '"><span class="counter' + cls + '" data-for="' + name + '">' + len + '/' + max + '</span></div><div class="inline-err" data-err="' + name + '"></div>';
+}
+function rsaRow(kind, i, value){
+  var max = kind === 'headline' ? PLATFORM.headlineMax : PLATFORM.descMax;
+  var key = kind + '_' + i;
+  var len = strLen(value);
+  var cls = len > max ? ' over' : (len > max * 0.85 ? ' near' : '');
+  return '<div class="rowinput"><input type="text" data-name="' + key + '" data-rsa="' + kind + '" data-count="' + max + '" value="' + esc(value) + '">' +
+    '<span class="counter' + cls + '" data-for="' + key + '">' + len + '/' + max + '</span>' +
+    '<button type="button" class="xbtn" data-a="row-del" data-kind="' + kind + '" data-i="' + i + '" title="Remove">✕</button></div>' +
+    '<div class="inline-err" data-err="' + key + '"></div>';
+}
+
+/* ---------- per-entity forms ---------- */
+function agOptions(tab){
+  return slice(tab).adgroups.map(function(a){ return [a.id, a.name + ' · ' + (INTENT_LABEL[a.intent] || a.intent)]; });
+}
+function campaignForm(d){
+  var v = d.draft;
+  var hint = d.tab === 'g1'
+    ? 'The club approved up to ₹' + fmt(state.brief.budgetCap) + '/day for this build — the brief at the top of the tab has the rest.'
+    : 'Ops ceiling for a booked walk-in is ₹' + fmt(state.brief.cpaCeiling) + ' — a Target CPA above that overpays for walk-ins.';
+  return fText('name', 'Campaign name', v.name) +
+    '<div class="grid2">' + fSel('type', 'Campaign type', CAMPAIGN_TYPES, v.type) + fSel('status', 'Status', STATUSES, v.status) + '</div>' +
+    '<div class="grid2">' + fNum('daily_budget', 'Daily budget (₹ / day)', v.daily_budget) + fSel('bid_strategy', 'Bid strategy', BID_STRATEGIES, v.bid_strategy) + '</div>' +
+    fNum('target_cpa', 'Target CPA (₹) — only used when the strategy is Target CPA', v.target_cpa) +
+    fChips('geo_targets', 'Geo targets — click to add or remove', GEO_OPTIONS, v.geo_targets) +
+    fChips('languages', 'Languages', LANG_OPTIONS, v.languages) +
+    '<div class="fieldrow"><label>Networks</label><div class="cbrow">' +
+      '<label><input type="checkbox" data-name="networks.search"' + (v.networks.search ? ' checked' : '') + '> Search</label>' +
+      '<label><input type="checkbox" data-name="networks.search_partners"' + (v.networks.search_partners ? ' checked' : '') + '> Search partners</label>' +
+      '<label><input type="checkbox" data-name="networks.display"' + (v.networks.display ? ' checked' : '') + '> Display</label>' +
+    '</div><div class="inline-err" data-err="networks"></div></div>' +
+    '<div class="drawerhint">' + hint + '</div>';
+}
+function adgroupForm(d){
+  var v = d.draft;
+  return fText('name', 'Ad group name', v.name) +
+    fSel('intent', 'Intent — what kind of demand this group captures', [['brand', 'Brand'], ['nonbrand', 'Non-brand (generic)'], ['competitor', 'Competitor'], ['other', 'Other / not one of these']], v.intent) +
+    fSel('status', 'Status', STATUSES, v.status) +
+    '<div class="drawerhint">The build expects one group per intent: brand · non-brand · competitor. Keywords and ads attach to the group.</div>';
+}
+function keywordForm(d){
+  var v = d.draft;
+  return fSel('adgroup_id', 'Ad group', agOptions(d.tab), v.adgroup_id) +
+    '<div class="fieldrow"><label>Keyword text</label>' + counterRow('text', v.text, PLATFORM.keywordMax) + '</div>' +
+    fSel('match_type', 'Match type', MATCH_TYPES, v.match_type) +
+    fCheck('is_negative', 'Negative keyword — blocks the term instead of bidding on it', v.is_negative) +
+    fSel('status', 'Status', STATUSES, v.status);
+}
+function negativesForm(d){
+  var v = d.draft;
+  return fSel('adgroup_id', 'Ad group these negatives go into', agOptions(d.tab), v.adgroup_id) +
+    fSel('match_type', 'Match type for all of these', MATCH_TYPES, v.match_type) +
+    '<div class="fieldrow"><label>Keywords — one per line (a leading “−” is fine and ignored)</label>' +
+    '<textarea data-name="raw" placeholder="job&#10;free admission&#10;gym jobs in noida">' + esc(v.raw || '') + '</textarea>' +
+    '<div class="inline-err" data-err="raw"></div></div>' +
+    '<div class="drawerhint">Each line becomes one negative keyword in that ad group — created one by one, and each one shows up in “What you’ve done”.</div>';
+}
+function rsaForm(d){
+  var v = d.draft;
+  return fSel('adgroup_id', 'Ad group', agOptions(d.tab), v.adgroup_id) +
+    '<div class="fieldrow"><label>Headlines — up to ' + PLATFORM.headlineCap + ', ≤' + PLATFORM.headlineMax + ' characters each</label>' +
+      v.headlines.map(function(h, i){ return rsaRow('headline', i, h); }).join('') +
+      '<div class="btnrow" style="margin-top:6px"><button type="button" class="btn small" data-a="row-add" data-kind="headline">+ Add headline</button></div>' +
+      '<div class="inline-err" data-err="headlines"></div>' +
+      '<div class="muted">Google needs at least 3 to serve; this brief asks for 8+. Under 8 is a failed check, not an error here.</div></div>' +
+    '<div class="fieldrow"><label>Descriptions — up to ' + PLATFORM.descCap + ', ≤' + PLATFORM.descMax + ' characters each</label>' +
+      v.descriptions.map(function(x, i){ return rsaRow('description', i, x); }).join('') +
+      '<div class="btnrow" style="margin-top:6px"><button type="button" class="btn small" data-a="row-add" data-kind="description">+ Add description</button></div>' +
+      '<div class="inline-err" data-err="descriptions"></div>' +
+      '<div class="muted">Google needs at least 2 to serve; the brief asks for 3+.</div></div>' +
+    fText('final_url', 'Final URL', v.final_url) +
+    '<div class="grid2">' + fText('path1', 'Display path 1 (optional)', v.path1) + fText('path2', 'Display path 2 (optional)', v.path2) + '</div>' +
+    fSel('status', 'Status', STATUSES, v.status);
+}
+function assetForm(d){
+  var v = d.draft;
+  if (d.type === 'SITELINK'){
+    return '<div class="fieldrow"><label>Sitelink text — ≤' + PLATFORM.sitelinkMax + ' characters</label>' + counterRow('text', v.text, PLATFORM.sitelinkMax) + '</div>' +
+      '<div class="fieldrow"><label>Description 1 (optional, ≤' + PLATFORM.sitelinkDescMax + ')</label>' + counterRow('description1', v.description1, PLATFORM.sitelinkDescMax) + '</div>' +
+      '<div class="fieldrow"><label>Description 2 (optional, ≤' + PLATFORM.sitelinkDescMax + ')</label>' + counterRow('description2', v.description2, PLATFORM.sitelinkDescMax) + '</div>' +
+      fSel('status', 'Status', STATUSES, v.status);
+  }
+  return '<div class="fieldrow"><label>Callout text — ≤' + PLATFORM.calloutMax + ' characters</label>' + counterRow('text', v.text, PLATFORM.calloutMax) + '</div>' +
+    fSel('status', 'Status', STATUSES, v.status);
+}
+function conversionForm(d){
+  var v = d.draft;
+  return fText('name', 'Conversion action name', v.name) +
+    '<div class="grid2">' + fSel('category', 'Category', CONV_CATEGORIES, v.category) + fSel('source', 'Source', CONV_SOURCES, v.source) + '</div>' +
+    fCheck('primary_for_goal', 'Primary for goal — the action bidding optimises for', v.primary_for_goal) +
+    fSel('status', 'Status', CONV_STATUSES, v.status) +
+    '<div class="drawerhint">Only actions marked primary drive bidding and count in the conversions column.</div>';
+}
+function drawerFormHtml(d){
+  if (d.kind === 'campaign') return campaignForm(d);
+  if (d.kind === 'adgroup') return adgroupForm(d);
+  if (d.kind === 'keyword') return keywordForm(d);
+  if (d.kind === 'negatives') return negativesForm(d);
+  if (d.kind === 'rsa') return rsaForm(d);
+  if (d.kind === 'asset') return assetForm(d);
+  if (d.kind === 'conversion') return conversionForm(d);
+  return '';
+}
+function isProtectedDrawer(d){
+  var s = slice(d.tab), t = null;
+  if (d.kind === 'campaign') t = s.campaign;
+  else if (d.kind === 'adgroup') t = s.adgroups.filter(function(x){ return x.id === d.id; })[0];
+  else if (d.kind === 'keyword') t = s.keywords.filter(function(x){ return x.id === d.id; })[0];
+  else if (d.kind === 'rsa') t = s.rsas.filter(function(x){ return x.id === d.id; })[0];
+  else if (d.kind === 'asset') t = s.assets.filter(function(x){ return x.id === d.id; })[0];
+  else if (d.kind === 'conversion') t = state.conversions.filter(function(x){ return x.id === d.id; })[0];
+  return !!(t && t.protected);
+}
+function drawerFootHtml(d){
+  var left = '';
+  if (d.mode === 'edit'){
+    var prot = isProtectedDrawer(d);
+    left = '<button class="btn small ' + (prot ? 'restricted' : 'danger') + '" data-a="drawer-delete"' +
+      (prot ? ' title="Pre-loaded account — deletes are rejected and logged"' : '') + '>Delete</button>';
+  }
+  return '<div>' + left + '</div><div class="right"><button class="btn" data-a="drawer-close">Cancel</button><button class="btn primary" data-a="drawer-save">Save</button></div>';
+}
+
+/* ---------- openers ---------- */
+function openCampaignDrawer(tab, mode){
+  var s = slice(tab);
+  var draft = (mode === 'edit' && s.campaign) ? JSON.parse(JSON.stringify(s.campaign)) : {
+    name: '', type: 'Search', daily_budget: '', bid_strategy: 'Maximize clicks', target_cpa: '',
+    status: 'Enabled', geo_targets: [], languages: ['English'], networks: { search: true, search_partners: false, display: false }
+  };
+  openDrawer({ kind: 'campaign', tab: tab, mode: mode, draft: draft,
+    title: mode === 'edit' ? 'Edit campaign' : 'Create campaign',
+    sub: tab === 'g1' ? ('The build for ' + state.brief.club) : 'The handover account — fix it in place' });
+}
+function openAdgroupDrawer(tab, mode, id){
+  var s = slice(tab);
+  if (!s.campaign){ flash('err', 'Create the campaign first — ad groups live under it.'); return; }
+  var draft = (mode === 'edit') ? JSON.parse(JSON.stringify(s.adgroups.filter(function(a){ return a.id === id; })[0])) : { name: '', intent: 'other', status: 'Enabled' };
+  openDrawer({ kind: 'adgroup', tab: tab, mode: mode, id: id, draft: draft,
+    title: mode === 'edit' ? 'Edit ad group' : 'Create ad group', sub: 'Split the build by intent: brand · non-brand · competitor.' });
+}
+function openKeywordDrawer(tab, mode, id){
+  var s = slice(tab);
+  if (!s.adgroups.length){ flash('err', 'Create an ad group first — keywords live inside one.'); return; }
+  var draft = (mode === 'edit') ? JSON.parse(JSON.stringify(s.keywords.filter(function(k){ return k.id === id; })[0]))
+    : { adgroup_id: s.adgroups[0].id, text: '', match_type: 'phrase', is_negative: false, status: 'Enabled' };
+  openDrawer({ kind: 'keyword', tab: tab, mode: mode, id: id, draft: draft,
+    title: mode === 'edit' ? 'Edit keyword' : 'Add keyword', sub: 'Negatives are added the same way, or with the paste-a-list helper.' });
+}
+function openNegativesDrawer(tab){
+  var s = slice(tab);
+  if (!s.adgroups.length){ flash('err', 'Create an ad group first — negatives live inside one.'); return; }
+  var def = s.adgroups.filter(function(a){ return a.intent === 'nonbrand'; })[0] || s.adgroups[0];
+  openDrawer({ kind: 'negatives', tab: tab, mode: 'create', id: null,
+    draft: { adgroup_id: def.id, match_type: 'phrase', raw: '' },
+    title: 'Add negatives — paste a list', sub: 'One keyword per line. Each line becomes one negative keyword.' });
+}
+function openRsaDrawer(tab, mode, id, adgroupId){
+  var s = slice(tab);
+  if (!s.adgroups.length){ flash('err', 'Create an ad group first — an ad lives inside one.'); return; }
+  var draft;
+  if (mode === 'edit'){ draft = JSON.parse(JSON.stringify(s.rsas.filter(function(r){ return r.id === id; })[0])); }
+  else {
+    draft = { adgroup_id: adgroupId || s.adgroups[0].id, headlines: ['', '', ''], descriptions: ['', ''], final_url: '', path1: '', path2: '', status: 'Enabled' };
+  }
+  openDrawer({ kind: 'rsa', tab: tab, mode: mode, id: id, draft: draft,
+    title: mode === 'edit' ? 'Edit responsive search ad' : 'Create responsive search ad',
+    sub: 'Headlines ≤30 characters · descriptions ≤90 · the counters update as you type.' });
+}
+function openAssetDrawer(tab, mode, id, type){
+  var s = slice(tab);
+  if (!s.campaign){ flash('err', 'Create the campaign first — assets attach to it.'); return; }
+  var draft;
+  if (mode === 'edit'){ draft = JSON.parse(JSON.stringify(s.assets.filter(function(a){ return a.id === id; })[0])); type = draft.type; }
+  else draft = { type: type, text: '', description1: '', description2: '', status: 'Enabled' };
+  openDrawer({ kind: 'asset', tab: tab, mode: mode, id: id, type: type, draft: draft,
+    title: (mode === 'edit' ? 'Edit ' : 'Add ') + (type === 'SITELINK' ? 'sitelink' : 'callout'),
+    sub: type === 'SITELINK' ? ('Text ≤' + PLATFORM.sitelinkMax + ' characters') : ('Text ≤' + PLATFORM.calloutMax + ' characters') });
+}
+function openConversionDrawer(tab, mode, id){
+  var draft = (mode === 'edit') ? JSON.parse(JSON.stringify(state.conversions.filter(function(c){ return c.id === id; })[0]))
+    : { name: '', category: 'Book appointment', source: 'Website', primary_for_goal: false, status: 'Enabled' };
+  openDrawer({ kind: 'conversion', tab: tab, mode: mode, id: id, draft: draft,
+    title: mode === 'edit' ? 'Edit conversion action' : 'Create conversion action', sub: 'Account-level — carries the primary-for-goal flag.' });
+}
+
+/* ---------- save ---------- */
+function negLines(raw){
+  return String(raw || '').split('\n').map(function(s){ return s.trim().replace(/^-\s*/, ''); }).filter(Boolean);
+}
+function validateDraft(d){
+  var e = {}, v = d.draft;
+  if (d.kind === 'campaign'){
+    if (!String(v.name || '').trim()) e.name = 'Give the campaign a name.';
+    var bud = Number(v.daily_budget);
+    if (!isFinite(bud) || bud <= 0) e.daily_budget = 'Enter a daily budget above ₹0.';
+    if (needsCpa(v.bid_strategy)){
+      var tc = Number(v.target_cpa);
+      if (!isFinite(tc) || tc <= 0) e.target_cpa = 'Target CPA bidding needs a target above ₹0 — that is the number the bidder steers by.';
+    }
+  }
+  if (d.kind === 'adgroup'){
+    if (!String(v.name || '').trim()) e.name = 'Give the ad group a name.';
+  }
+  if (d.kind === 'keyword'){
+    if (!v.adgroup_id) e.adgroup_id = 'Pick the ad group this keyword belongs to.';
+    var t = String(v.text || '').trim();
+    if (!t) e.text = 'Type the keyword text.';
+    else if (t.length > PLATFORM.keywordMax) e.text = 'Google Ads caps a keyword at ' + PLATFORM.keywordMax + ' characters (this one is ' + t.length + ').';
+  }
+  if (d.kind === 'negatives'){
+    if (!v.adgroup_id) e.adgroup_id = 'Pick the ad group for these negatives.';
+    if (!negLines(v.raw).length) e.raw = 'Paste at least one keyword — one per line.';
+  }
+  if (d.kind === 'rsa'){
+    var hs = (v.headlines || []).map(function(x){ return String(x || '').trim(); });
+    var ds = (v.descriptions || []).map(function(x){ return String(x || '').trim(); });
+    if (!hs.filter(Boolean).length) e.headline_0 = 'Add at least one headline to start.';
+    if (hs.length > PLATFORM.headlineCap) e.headlines = 'Up to ' + PLATFORM.headlineCap + ' headlines.';
+    hs.forEach(function(h, i){ if (h.length > PLATFORM.headlineMax) e['headline_' + i] = h.length + ' characters — the limit is ' + PLATFORM.headlineMax + '.'; });
+    if (ds.length > PLATFORM.descCap) e.descriptions = 'Up to ' + PLATFORM.descCap + ' descriptions.';
+    ds.forEach(function(x, i){ if (x.length > PLATFORM.descMax) e['description_' + i] = x.length + ' characters — the limit is ' + PLATFORM.descMax + '.'; });
+  }
+  if (d.kind === 'asset'){
+    var tx = String(v.text || '').trim();
+    var lim = d.type === 'SITELINK' ? PLATFORM.sitelinkMax : PLATFORM.calloutMax;
+    if (!tx) e.text = 'Type the asset text.';
+    else if (tx.length > lim) e.text = tx.length + ' characters — the limit is ' + lim + '.';
+    if (d.type === 'SITELINK'){
+      if (strLen(v.description1) > PLATFORM.sitelinkDescMax) e.description1 = 'Sitelink descriptions are capped at ' + PLATFORM.sitelinkDescMax + ' characters.';
+      if (strLen(v.description2) > PLATFORM.sitelinkDescMax) e.description2 = 'Sitelink descriptions are capped at ' + PLATFORM.sitelinkDescMax + ' characters.';
+    }
+  }
+  if (d.kind === 'conversion'){
+    if (!String(v.name || '').trim()) e.name = 'Give the conversion action a name.';
+  }
+  return e;
+}
+function saveDrawer(){
+  if (!drawer) return;
+  syncInputsToDraft();
+  if (drawer.kind === 'rsa') snapshotRsa();
+  var errs = validateDraft(drawer);
+  if (Object.keys(errs).length){
+    drawer.errors = errs;
+    renderDrawer();
+    flash('err', 'Not saved yet — ' + Object.keys(errs).length + ' field' + (Object.keys(errs).length === 1 ? '' : 's') + ' need attention (red notes in the form).');
+    return;
+  }
+  applyDraft(drawer);
+}
+function applyDraft(d){
+  var v = d.draft, s = slice(d.tab), tabUpper = d.tab.toUpperCase(), msg = '', kind = 'ok';
+  if (d.kind === 'campaign'){
+    var fields = {
+      name: String(v.name || '').trim(), type: v.type, daily_budget: Number(v.daily_budget) || 0,
+      bid_strategy: v.bid_strategy, target_cpa: Number(v.target_cpa) || 0, status: v.status,
+      geo_targets: (v.geo_targets || []).slice(), languages: (v.languages || []).slice(),
+      networks: { search: !!v.networks.search, search_partners: !!v.networks.search_partners, display: !!v.networks.display }
+    };
+    if (d.mode === 'edit' && s.campaign){
+      Object.assign(s.campaign, fields);
+      logAction(tabUpper, 'Updated', 'campaign', fields.name, true);
+      msg = 'Campaign updated — the validation list has re-checked.';
+    } else {
+      fields.id = nextId('cmp'); fields.protected = false;
+      s.campaign = fields;
+      logAction(tabUpper, 'Created', 'campaign', fields.name, true);
+      msg = 'Campaign created — now the ad groups (brand · non-brand · competitor).';
+    }
+  }
+  if (d.kind === 'adgroup'){
+    var agFields = { name: String(v.name || '').trim(), intent: v.intent, status: v.status };
+    if (d.mode === 'edit'){
+      var ag = s.adgroups.filter(function(a){ return a.id === d.id; })[0];
+      Object.assign(ag, agFields);
+      logAction(tabUpper, 'Updated', 'adgroup', agFields.name, true);
+      msg = 'Ad group updated.';
+    } else {
+      agFields.id = nextId('ag'); agFields.protected = false;
+      s.adgroups.push(agFields);
+      logAction(tabUpper, 'Created', 'adgroup', agFields.name, true);
+      msg = 'Ad group created — add its keywords next.';
+    }
+  }
+  if (d.kind === 'keyword'){
+    var kFields = { adgroup_id: v.adgroup_id, text: String(v.text || '').trim(), match_type: v.match_type, is_negative: !!v.is_negative, status: v.status };
+    if (d.mode === 'edit'){
+      var kw = s.keywords.filter(function(k){ return k.id === d.id; })[0];
+      Object.assign(kw, kFields);
+      logAction(tabUpper, 'Updated', 'keyword', (kFields.is_negative ? '– ' : '') + kFields.text, true);
+      msg = 'Keyword updated.';
+    } else {
+      kFields.id = nextId('kw'); kFields.protected = false;
+      s.keywords.push(kFields);
+      logAction(tabUpper, 'Created', 'keyword', (kFields.is_negative ? '– ' : '') + kFields.text, true);
+      msg = (kFields.is_negative ? 'Negative added.' : 'Keyword added.');
+    }
+  }
+  if (d.kind === 'negatives'){
+    var lines = negLines(v.raw);
+    var existing = s.keywords.filter(function(k){ return k.adgroup_id === v.adgroup_id && k.is_negative; })
+      .map(function(k){ return k.text.toLowerCase(); });
+    var added = 0, skipped = 0;
+    lines.forEach(function(text){
+      var key = text.toLowerCase();
+      if (existing.indexOf(key) >= 0){ skipped++; return; }
+      existing.push(key);
+      s.keywords.push({ id: nextId('kw'), adgroup_id: v.adgroup_id, text: text, match_type: v.match_type, is_negative: true, status: 'Enabled', protected: false });
+      added++;
+      logAction(tabUpper, 'Created', 'keyword', '– ' + text, true);
+    });
+    msg = added ? ('Added ' + added + ' negative' + (added === 1 ? '' : 's') + (skipped ? ' (' + skipped + ' skipped as duplicates)' : '') + '.')
+                : 'No new negatives — every line already exists in that ad group.';
+  }
+  if (d.kind === 'rsa'){
+    var rFields = {
+      adgroup_id: v.adgroup_id,
+      headlines: (v.headlines || []).map(function(x){ return String(x || '').trim(); }).filter(Boolean),
+      descriptions: (v.descriptions || []).map(function(x){ return String(x || '').trim(); }).filter(Boolean),
+      final_url: String(v.final_url || '').trim(), path1: String(v.path1 || '').trim(), path2: String(v.path2 || '').trim(), status: v.status
+    };
+    if (d.mode === 'edit'){
+      var rr = s.rsas.filter(function(x){ return x.id === d.id; })[0];
+      Object.assign(rr, rFields);
+      logAction(tabUpper, 'Updated', 'rsa', rFields.headlines.length + ' headlines · ' + rFields.descriptions.length + ' descriptions', true);
+      msg = 'Ad updated.';
+    } else {
+      rFields.id = nextId('rsa'); rFields.protected = false;
+      s.rsas.push(rFields);
+      logAction(tabUpper, 'Created', 'rsa', rFields.headlines.length + ' headlines · ' + rFields.descriptions.length + ' descriptions', true);
+      msg = 'Ad created — the counters and checks now read it.';
+    }
+  }
+  if (d.kind === 'asset'){
+    var aFields = { type: d.type, text: String(v.text || '').trim(), description1: d.type === 'SITELINK' ? String(v.description1 || '').trim() : '', description2: d.type === 'SITELINK' ? String(v.description2 || '').trim() : '', status: v.status };
+    if (d.mode === 'edit'){
+      var aa = s.assets.filter(function(x){ return x.id === d.id; })[0];
+      Object.assign(aa, aFields);
+      logAction(tabUpper, 'Updated', d.type.toLowerCase(), aFields.text, true);
+      msg = 'Asset updated.';
+    } else {
+      aFields.id = nextId('as'); aFields.protected = false;
+      s.assets.push(aFields);
+      logAction(tabUpper, 'Created', d.type.toLowerCase(), aFields.text, true);
+      msg = 'Asset added.';
+    }
+  }
+  if (d.kind === 'conversion'){
+    var cFields = { name: String(v.name || '').trim(), category: v.category, source: v.source, primary_for_goal: !!v.primary_for_goal, status: v.status };
+    if (d.mode === 'edit'){
+      var cv = state.conversions.filter(function(x){ return x.id === d.id; })[0];
+      Object.assign(cv, cFields);
+      logAction(tabUpper, 'Updated', 'conversion', cFields.name, true);
+      msg = 'Conversion action updated.';
+    } else {
+      cFields.id = nextId('cv');
+      state.conversions.push(cFields);
+      logAction(tabUpper, 'Created', 'conversion', cFields.name, true);
+      msg = 'Conversion action created.';
+    }
+  }
+  closeDrawer();
+  saveLocal();
+  renderAll();
+  flash(kind, msg || 'Saved.');
+}
+function deleteEntity(){
+  if (!drawer) return;
+  var d = drawer, s = slice(d.tab), tabUpper = d.tab.toUpperCase();
+  var target = null, label = '', extra = '';
+  if (d.kind === 'campaign'){ target = s.campaign; label = target ? target.name : ''; }
+  else if (d.kind === 'adgroup'){
+    target = s.adgroups.filter(function(x){ return x.id === d.id; })[0];
+    if (target){
+      var kn = s.keywords.filter(function(k){ return k.adgroup_id === target.id; }).length;
+      var an = s.rsas.filter(function(r){ return r.adgroup_id === target.id; }).length;
+      extra = ' Its ' + kn + ' keyword(s) and ' + an + ' ad(s) go too.';
+    }
+    label = target ? target.name : '';
+  }
+  else if (d.kind === 'keyword'){ target = s.keywords.filter(function(x){ return x.id === d.id; })[0]; label = target ? ('“' + target.text + '”') : ''; }
+  else if (d.kind === 'rsa'){ target = s.rsas.filter(function(x){ return x.id === d.id; })[0]; label = 'this ad'; }
+  else if (d.kind === 'asset'){ target = s.assets.filter(function(x){ return x.id === d.id; })[0]; label = target ? ('“' + target.text + '”') : ''; }
+  else if (d.kind === 'conversion'){ target = state.conversions.filter(function(x){ return x.id === d.id; })[0]; label = target ? ('“' + target.name + '”') : ''; }
+  if (!target) return;
+  if (target.protected){
+    restrictedAttempt('protected_delete/' + d.kind, 'Delete ' + label);
+    closeDrawer();
+    renderAll();
+    return;
+  }
+  if (!window.confirm('Delete ' + label + '?' + extra + ' This cannot be undone.')) return;
+  if (d.kind === 'campaign') s.campaign = null;
+  else if (d.kind === 'adgroup'){
+    s.adgroups = s.adgroups.filter(function(x){ return x.id !== d.id; });
+    s.keywords = s.keywords.filter(function(k){ return k.adgroup_id !== d.id; });
+    s.rsas = s.rsas.filter(function(r){ return r.adgroup_id !== d.id; });
+  }
+  else if (d.kind === 'keyword') s.keywords = s.keywords.filter(function(x){ return x.id !== d.id; });
+  else if (d.kind === 'rsa') s.rsas = s.rsas.filter(function(x){ return x.id !== d.id; });
+  else if (d.kind === 'asset') s.assets = s.assets.filter(function(x){ return x.id !== d.id; });
+  else if (d.kind === 'conversion') state.conversions = state.conversions.filter(function(x){ return x.id !== d.id; });
+  logAction(tabUpper, 'Deleted', d.kind, label, true);
+  closeDrawer();
+  saveLocal();
+  renderAll();
+  flash('warn', 'Deleted ' + label + '.');
+}
+/* ------------------------------------------------------------------
+   validation engine — the rules the reviewer will check, live
+   ------------------------------------------------------------------ */
+function item(tab, id, label, status, detail, blocks){
+  return { tab: tab, id: id, label: label, status: status, detail: detail || '', blocks_export: !!blocks };
+}
+function geoCheck(geo){
+  geo = Array.isArray(geo) ? geo : [];
+  var districts = geo.filter(function(g){ return g !== 'All India'; });
+  if (geo.indexOf('All India') >= 0){
+    return { status: 'fail', detail: '“All India” is still selected — this campaign serves one club, not the country. Remove it and pick Noida + NCR districts.' };
+  }
+  if (!geo.length){
+    return { status: 'fail', detail: 'No geo targets yet — add Noida plus at least two more NCR districts.' };
+  }
+  if (geo.indexOf('Noida') < 0){
+    return { status: 'fail', detail: 'Noida is not in the target list — add it, plus at least two more NCR districts.' };
+  }
+  if (districts.length < 3){
+    return { status: 'fail', detail: 'Only ' + districts.length + ' district' + (districts.length === 1 ? '' : 's') + ' selected — the brief wants Noida plus 2+ NCR neighbours.' };
+  }
+  return { status: 'pass', detail: 'Noida + ' + (districts.length - 1) + ' more NCR district' + ((districts.length - 1) === 1 ? '' : 's') + ' (' + districts.join(', ') + ').' };
+}
+function networksCheck(n){
+  n = n || {};
+  var on = [];
+  if (n.search_partners) on.push('Search partners');
+  if (n.display) on.push('Display');
+  if (!n.search) return { status: 'fail', detail: 'The Search network must be ON.' };
+  if (on.length) return { status: 'fail', detail: on.join(' and ') + ' ' + (on.length === 1 ? 'is' : 'are') + ' on — this build is Search only.' };
+  return { status: 'pass', detail: 'Search on; Search partners and Display off.' };
+}
+
+function validateG1(){
+  var out = [], s = state.g1, b = state.brief, c = s.campaign;
+  var req = ['brand', 'nonbrand', 'competitor'];
+  var found = {};
+  req.forEach(function(k){ found[k] = s.adgroups.filter(function(a){ return a.intent === k; })[0] || null; });
+
+  /* 1 — campaign */
+  if (!c){
+    out.push(item('g1', 'campaign', 'A Search campaign is built', 'fail', 'Nothing built yet — open the Campaign view and create it.'));
+  } else if (c.type !== 'Search'){
+    out.push(item('g1', 'campaign', 'A Search campaign is built', 'fail', 'Campaign type is “' + c.type + '” — this brief needs a Search campaign.'));
+  } else {
+    out.push(item('g1', 'campaign', 'A Search campaign is built', 'pass', '“' + c.name + '” · Search · ' + c.status + '.'));
+  }
+
+  /* 2 — budget */
+  if (!c){
+    out.push(item('g1', 'budget', 'Daily budget inside the club’s cap', 'fail', 'Build the campaign first — then set its daily budget.'));
+  } else {
+    var bud = Number(c.daily_budget) || 0;
+    if (bud <= 0) out.push(item('g1', 'budget', 'Daily budget inside the club’s cap', 'fail', 'The daily budget is ₹0 — set the amount the club can spend per day.'));
+    else if (bud > b.budgetCap) out.push(item('g1', 'budget', 'Daily budget inside the club’s cap', 'fail', '₹' + fmt(bud) + '/day is above the club’s approved ₹' + fmt(b.budgetCap) + '/day cap.'));
+    else out.push(item('g1', 'budget', 'Daily budget inside the club’s cap', 'pass', '₹' + fmt(bud) + '/day (cap ₹' + fmt(b.budgetCap) + ').'));
+  }
+
+  /* 3 — bid strategy vs the stated volume */
+  if (!c){
+    out.push(item('g1', 'bid_strategy', 'Bid strategy fits the conversion volume', 'fail', 'Build the campaign first.'));
+  } else if (c.bid_strategy === 'Maximize clicks'){
+    out.push(item('g1', 'bid_strategy', 'Bid strategy fits the conversion volume', 'pass', '“Maximize clicks” — right call for ~' + b.volume + ' walk-ins a month (smart bidding needs ~15+ to learn).'));
+  } else {
+    out.push(item('g1', 'bid_strategy', 'Bid strategy fits the conversion volume', 'fail', 'The account tracked ~' + b.volume + ' walk-in bookings in the last 30 days. At that volume smart bidding cannot learn — choose “Maximize clicks”.'));
+  }
+
+  /* 4 — geo */
+  var g = geoCheck(c ? c.geo_targets : []);
+  out.push(item('g1', 'geo', 'Geo targets: Noida + NCR districts', g.status, g.detail));
+
+  /* 5 — language */
+  if (!c){
+    out.push(item('g1', 'languages', 'Language: English', 'fail', 'Build the campaign first.'));
+  } else {
+    var langs = c.languages || [];
+    var onlyEnglish = langs.length === 1 && langs[0] === 'English';
+    out.push(item('g1', 'languages', 'Language: English', onlyEnglish ? 'pass' : 'fail',
+      onlyEnglish ? 'English only.' : ('Language is ' + (langs.length ? '“' + langs.join(', ') + '”' : 'empty') + ' — set English only.')));
+  }
+
+  /* 6 — networks */
+  if (!c){
+    out.push(item('g1', 'networks', 'Networks: Search only', 'fail', 'Build the campaign first.'));
+  } else {
+    var nres = networksCheck(c.networks);
+    out.push(item('g1', 'networks', 'Networks: Search only', nres.status, nres.detail));
+  }
+
+  /* 7 — ad groups split by intent */
+  if (!s.adgroups.length){
+    out.push(item('g1', 'adgroups', 'Ad groups split by intent (brand · non-brand · competitor)', 'fail', 'No ad groups yet.'));
+  } else {
+    var missing = req.filter(function(k){ return !found[k]; });
+    if (missing.length){
+      out.push(item('g1', 'adgroups', 'Ad groups split by intent (brand · non-brand · competitor)', 'fail',
+        'Missing: ' + missing.map(function(k){ return INTENT_LABEL[k]; }).join(', ') + '. Present: ' + s.adgroups.map(function(a){ return INTENT_LABEL[a.intent] || a.intent; }).join(', ') + '.'));
+    } else {
+      out.push(item('g1', 'adgroups', 'Ad groups split by intent (brand · non-brand · competitor)', 'pass', 'brand · non-brand · competitor all present.'));
+    }
+  }
+
+  /* 8 — keywords per group */
+  var countsByIntent = {};
+  req.forEach(function(k){ countsByIntent[k] = found[k] ? s.keywords.filter(function(x){ return x.adgroup_id === found[k].id && !x.is_negative; }).length : 0; });
+  var countLine = req.map(function(k){ return INTENT_LABEL[k].toLowerCase() + ' ' + countsByIntent[k] + '/5'; }).join(' · ');
+  var shortGroups = req.filter(function(k){ return countsByIntent[k] < 5; });
+  out.push(item('g1', 'keyword_counts', '5+ keywords in every group', shortGroups.length ? 'fail' : 'pass',
+    shortGroups.length ? ('Not there yet — ' + countLine + '.') : ('Counts: ' + countLine + '.')));
+
+  /* 9 — match types fit the intent */
+  var offenders = [];
+  s.keywords.forEach(function(k){
+    if (k.is_negative) return;
+    var ag = s.adgroups.filter(function(a){ return a.id === k.adgroup_id; })[0];
+    if (!ag) return;
+    var allowed = INTENT_MATCH[ag.intent];
+    if (!allowed) return;
+    if (allowed.indexOf(k.match_type) < 0) offenders.push((INTENT_LABEL[ag.intent] || ag.intent) + ': “' + k.text + '” is ' + k.match_type + ' — use ' + allowed.join(' or '));
+  });
+  var anyPos = s.keywords.filter(function(k){ return !k.is_negative; }).length;
+  if (!anyPos){
+    out.push(item('g1', 'match_types', 'Match types fit each intent', 'fail', 'No keywords yet.'));
+  } else if (offenders.length){
+    out.push(item('g1', 'match_types', 'Match types fit each intent', 'fail', offenders.join(' · ') + '.'));
+  } else {
+    out.push(item('g1', 'match_types', 'Match types fit each intent', 'pass', 'Brand exact/phrase · non-brand phrase/broad · competitor phrase/exact — all respected.'));
+  }
+
+  /* 10 — negatives on the non-brand group */
+  if (!found.nonbrand){
+    out.push(item('g1', 'negatives', '8+ negatives on the non-brand group', 'fail', 'No non-brand ad group yet — that is where the negatives go.'));
+  } else {
+    var negs = s.keywords.filter(function(k){ return k.adgroup_id === found.nonbrand.id && k.is_negative; });
+    var brandHits = negs.filter(function(k){ return BRAND_TOKENS.some(function(t){ return k.text.toLowerCase().indexOf(t) >= 0; }); }).length;
+    var irrHits = negs.filter(function(k){ return IRRELEVANT_TOKENS.some(function(t){ return k.text.toLowerCase().indexOf(t) >= 0; }); }).length;
+    var negLine = negs.length + '/8 negatives · brand terms ' + brandHits + '/2 · irrelevant ' + irrHits + '/2';
+    if (negs.length < 8 || brandHits < 2 || irrHits < 2){
+      out.push(item('g1', 'negatives', '8+ negatives on the non-brand group', 'fail', negLine + ' — cover your brand terms and the irrelevant intents.'));
+    } else {
+      out.push(item('g1', 'negatives', '8+ negatives on the non-brand group', 'pass', negLine + '.'));
+    }
+  }
+
+  /* 11/12 — RSA headlines + descriptions */
+  function rsaSummary(rsas){
+    return rsas.map(function(r){
+      var ag = s.adgroups.filter(function(a){ return a.id === r.adgroup_id; })[0];
+      var bits = (ag ? ag.name : 'ad') + ': ' + r.headlines.length + ' headlines';
+      var longH = r.headlines.filter(function(h){ return strLen(h) > PLATFORM.headlineMax; }).length;
+      if (longH) bits += ' (' + longH + ' over ' + PLATFORM.headlineMax + ')';
+      bits += ' · ' + r.descriptions.length + ' descriptions';
+      var longD = r.descriptions.filter(function(d){ return strLen(d) > PLATFORM.descMax; }).length;
+      if (longD) bits += ' (' + longD + ' over ' + PLATFORM.descMax + ')';
+      return bits;
+    }).join(' · ');
+  }
+  function qualifiesH(r){
+    return r.headlines.length >= 8 && r.headlines.length <= PLATFORM.headlineCap &&
+      r.headlines.every(function(h){ return strLen(h) <= PLATFORM.headlineMax; });
+  }
+  function qualifiesD(r){
+    return r.descriptions.length >= 3 && r.descriptions.length <= PLATFORM.descCap &&
+      r.descriptions.every(function(d){ return strLen(d) <= PLATFORM.descMax; });
+  }
+  var rsas = s.rsas;
+  if (!rsas.length){
+    out.push(item('g1', 'rsa_headlines', 'RSA with 8+ headlines (≤30 characters each)', 'fail', 'No ad yet — build the RSA in the Ads view.'));
+    out.push(item('g1', 'rsa_descriptions', 'RSA with 3+ descriptions (≤90 characters each)', 'fail', 'No ad yet — build the RSA in the Ads view.'));
+  } else {
+    var sum = rsaSummary(rsas);
+    var blocksH = rsas.some(function(r){ return r.headlines.length > PLATFORM.headlineCap || r.headlines.some(function(h){ return strLen(h) > PLATFORM.headlineMax; }); });
+    var blocksD = rsas.some(function(r){ return r.descriptions.length > PLATFORM.descCap || r.descriptions.some(function(d){ return strLen(d) > PLATFORM.descMax; }); });
+    if (!rsas.filter(qualifiesH).length){
+      out.push(item('g1', 'rsa_headlines', 'RSA with 8+ headlines (≤30 characters each)', 'fail', 'Needs 8+ headlines (max ' + PLATFORM.headlineCap + ', ' + PLATFORM.headlineMax + ' characters each). Now — ' + sum + '.', blocksH));
+    } else {
+      var gapsH = req.filter(function(k){ if (!found[k]) return true; var r = rsas.filter(function(x){ return x.adgroup_id === found[k].id; })[0]; return !r || !qualifiesH(r); });
+      if (gapsH.length){
+        out.push(item('g1', 'rsa_headlines', 'RSA with 8+ headlines (≤30 characters each)', 'warn', '8+ reached on at least one ad. Recommended: a full RSA per group — still short or missing: ' + gapsH.map(function(k){ return INTENT_LABEL[k]; }).join(', ') + '. (' + sum + ')', blocksH));
+      } else {
+        out.push(item('g1', 'rsa_headlines', 'RSA with 8+ headlines (≤30 characters each)', 'pass', sum + '.', blocksH));
+      }
+    }
+    if (!rsas.filter(qualifiesD).length){
+      out.push(item('g1', 'rsa_descriptions', 'RSA with 3+ descriptions (≤90 characters each)', 'fail', 'Needs 3+ descriptions (max ' + PLATFORM.descCap + ', ' + PLATFORM.descMax + ' characters each). Now — ' + sum + '.', blocksD));
+    } else {
+      var gapsD = req.filter(function(k){ if (!found[k]) return true; var r = rsas.filter(function(x){ return x.adgroup_id === found[k].id; })[0]; return !r || !qualifiesD(r); });
+      if (gapsD.length){
+        out.push(item('g1', 'rsa_descriptions', 'RSA with 3+ descriptions (≤90 characters each)', 'warn', '3+ reached on at least one ad — recommended everywhere. Still short or missing: ' + gapsD.map(function(k){ return INTENT_LABEL[k]; }).join(', ') + '. (' + sum + ')', blocksD));
+      } else {
+        out.push(item('g1', 'rsa_descriptions', 'RSA with 3+ descriptions (≤90 characters each)', 'pass', sum + '.', blocksD));
+      }
+    }
+  }
+
+  /* 13 — sitelinks */
+  var sl = s.assets.filter(function(a){ return a.type === 'SITELINK' && strLen(a.text); });
+  var slLong = sl.filter(function(a){ return strLen(a.text) > PLATFORM.sitelinkMax; });
+  var slGood = sl.filter(function(a){ return strLen(a.text) <= PLATFORM.sitelinkMax; });
+  if (!sl.length){
+    out.push(item('g1', 'sitelinks', '4+ sitelinks (≤25 characters each)', 'fail', 'No sitelinks yet — add them in the Assets view.'));
+  } else if (slLong.length){
+    out.push(item('g1', 'sitelinks', '4+ sitelinks (≤25 characters each)', 'fail', slLong.length + ' sitelink(s) over ' + PLATFORM.sitelinkMax + ' characters (e.g. “' + slLong[0].text + '” is ' + strLen(slLong[0].text) + ').', true));
+  } else if (slGood.length < 4){
+    out.push(item('g1', 'sitelinks', '4+ sitelinks (≤25 characters each)', 'fail', 'Only ' + slGood.length + ' of 4 so far.'));
+  } else {
+    out.push(item('g1', 'sitelinks', '4+ sitelinks (≤25 characters each)', 'pass', slGood.length + ' sitelinks, all within ' + PLATFORM.sitelinkMax + ' characters.'));
+  }
+  return out;
+}
+
+function validateG2(){
+  var out = [], s = state.g2, b = state.brief, c = s.campaign;
+  function agName(r){ var ag = s.adgroups.filter(function(a){ return a.id === r.adgroup_id; })[0]; return ag ? ag.name : 'ad'; }
+
+  /* 1 — budget */
+  if (!c) out.push(item('g2', 'budget', 'Campaign budget is on', 'fail', 'The account campaign is missing.'));
+  else if (!(Number(c.daily_budget) > 0)) out.push(item('g2', 'budget', 'Campaign budget is on', 'fail', 'The daily budget is ₹0 — nothing can serve.'));
+  else out.push(item('g2', 'budget', 'Campaign budget is on', 'pass', '₹' + fmt(c.daily_budget) + '/day.'));
+
+  /* 2/3 — ad minimums, every ad */
+  var rsas = s.rsas;
+  if (!rsas.length){
+    out.push(item('g2', 'rsa_headlines', 'Every ad meets the 3-headline minimum (≤30 chars)', 'fail', 'The account has no ads at all.'));
+    out.push(item('g2', 'rsa_descriptions', 'Every ad meets the 2-description minimum (≤90 chars)', 'fail', 'The account has no ads at all.'));
+  } else {
+    var badH = rsas.filter(function(r){ return r.headlines.length < PLATFORM.headlineMin || r.headlines.some(function(h){ return strLen(h) > PLATFORM.headlineMax; }); });
+    var blkH = rsas.some(function(r){ return r.headlines.length > PLATFORM.headlineCap || r.headlines.some(function(h){ return strLen(h) > PLATFORM.headlineMax; }); });
+    if (badH.length){
+      out.push(item('g2', 'rsa_headlines', 'Every ad meets the 3-headline minimum (≤30 chars)', 'fail',
+        'Below the minimum: ' + badH.map(function(r){ return agName(r) + ' — ' + r.headlines.length + ' headline' + (r.headlines.length === 1 ? '' : 's'); }).join(' · ') + '. Google Ads will not serve an ad with fewer than ' + PLATFORM.headlineMin + ' headlines.', blkH));
+    } else {
+      out.push(item('g2', 'rsa_headlines', 'Every ad meets the 3-headline minimum (≤30 chars)', 'pass', 'All ' + rsas.length + ' ads clear the minimum.', blkH));
+    }
+    var badD = rsas.filter(function(r){ return r.descriptions.length < PLATFORM.descMin || r.descriptions.some(function(d){ return strLen(d) > PLATFORM.descMax; }); });
+    var blkD = rsas.some(function(r){ return r.descriptions.length > PLATFORM.descCap || r.descriptions.some(function(d){ return strLen(d) > PLATFORM.descMax; }); });
+    if (badD.length){
+      out.push(item('g2', 'rsa_descriptions', 'Every ad meets the 2-description minimum (≤90 chars)', 'fail',
+        'Below the minimum: ' + badD.map(function(r){ return agName(r) + ' — ' + r.descriptions.length + ' description' + (r.descriptions.length === 1 ? '' : 's'); }).join(' · ') + '.', blkD));
+    } else {
+      out.push(item('g2', 'rsa_descriptions', 'Every ad meets the 2-description minimum (≤90 chars)', 'pass', 'All ' + rsas.length + ' ads clear the minimum.', blkD));
+    }
+  }
+
+  /* 4 — negatives on the generic group */
+  var gen = s.adgroups.filter(function(a){ return a.intent === 'nonbrand'; })[0];
+  if (!gen){
+    out.push(item('g2', 'negatives', 'The broad keyword has negatives behind it', 'fail', 'No generic (non-brand) ad group found.'));
+  } else {
+    var negs = s.keywords.filter(function(k){ return k.adgroup_id === gen.id && k.is_negative; });
+    var broad = s.keywords.filter(function(k){ return k.adgroup_id === gen.id && !k.is_negative && k.match_type === 'broad'; })[0];
+    if (negs.length < 3){
+      out.push(item('g2', 'negatives', 'The broad keyword has negatives behind it', 'fail',
+        '“' + (broad ? broad.text : gen.name) + '” runs with ' + negs.length + ' negative' + (negs.length === 1 ? '' : 's') + ' in “' + gen.name + '”. A broad match with nothing filtering it is how budgets die — add at least 3.'));
+    } else {
+      out.push(item('g2', 'negatives', 'The broad keyword has negatives behind it', 'pass', negs.length + ' negatives protecting “' + (broad ? broad.text : gen.name) + '”.'));
+    }
+  }
+
+  /* 5 — geo */
+  var g = geoCheck(c ? c.geo_targets : []);
+  out.push(item('g2', 'geo', 'Targeting back inside the club’s catchment', g.status, g.detail));
+
+  /* 6 — conversion primary for the goal */
+  var cv = state.conversions.filter(function(x){ return x.id === 'cv_walkin'; })[0];
+  if (!cv){
+    out.push(item('g2', 'conversion_primary', 'The walk-in conversion is primary for the goal', 'fail', 'The walk-in conversion action is missing from the account.'));
+  } else if (!cv.primary_for_goal){
+    out.push(item('g2', 'conversion_primary', 'The walk-in conversion is primary for the goal', 'fail', '“' + cv.name + '” is not marked primary for the goal — bidding is optimising for whatever is.'));
+  } else {
+    out.push(item('g2', 'conversion_primary', 'The walk-in conversion is primary for the goal', 'pass', '“' + cv.name + '” is primary; bidding now optimises towards booked walk-ins.'));
+  }
+
+  /* 7 — target CPA */
+  if (!c){
+    out.push(item('g2', 'target_cpa', 'Target CPA has a real value', 'fail', 'The account campaign is missing.'));
+  } else if (needsCpa(c.bid_strategy)){
+    var tc = Number(c.target_cpa) || 0;
+    if (tc <= 0){
+      out.push(item('g2', 'target_cpa', 'Target CPA has a real value', 'fail', 'Target CPA is ₹0 — a Target CPA campaign with a zero target cannot bid. Set what you will pay per booked walk-in (ops ceiling ₹' + fmt(b.cpaCeiling) + ').'));
+    } else if (tc > b.cpaCeiling){
+      out.push(item('g2', 'target_cpa', 'Target CPA has a real value', 'warn', '₹' + fmt(tc) + ' is above the ops ceiling of ₹' + fmt(b.cpaCeiling) + ' — you will overpay for walk-ins.'));
+    } else {
+      out.push(item('g2', 'target_cpa', 'Target CPA has a real value', 'pass', '₹' + fmt(tc) + ' against an ops ceiling of ₹' + fmt(b.cpaCeiling) + '.'));
+    }
+  } else if (c.bid_strategy === 'Maximize clicks'){
+    out.push(item('g2', 'target_cpa', 'Target CPA has a real value', 'warn', 'Strategy is now “Maximize clicks” — no cost-per-walk-in guardrail in play (ops ceiling ₹' + fmt(b.cpaCeiling) + ').'));
+  } else {
+    out.push(item('g2', 'target_cpa', 'Target CPA has a real value', 'warn', 'Strategy is “' + c.bid_strategy + '” — the ₹0 target no longer applies, but no walk-in cost guardrail is in play either.'));
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------
+   hard platform limits — these lock export until fixed
+   ------------------------------------------------------------------ */
+function hardLimitViolations(){
+  var v = [];
+  ['g1', 'g2'].forEach(function(tab){
+    var s = slice(tab);
+    s.rsas.forEach(function(r){
+      if (r.headlines.length > PLATFORM.headlineCap) v.push('An ad has ' + r.headlines.length + ' headlines — the cap is ' + PLATFORM.headlineCap + '.');
+      r.headlines.forEach(function(h){ if (strLen(h) > PLATFORM.headlineMax) v.push('Headline “' + h + '” is ' + strLen(h) + ' characters — the limit is ' + PLATFORM.headlineMax + '.'); });
+      if (r.descriptions.length > PLATFORM.descCap) v.push('An ad has ' + r.descriptions.length + ' descriptions — the cap is ' + PLATFORM.descCap + '.');
+      r.descriptions.forEach(function(d){ if (strLen(d) > PLATFORM.descMax) v.push('Description “' + d + '” is ' + strLen(d) + ' characters — the limit is ' + PLATFORM.descMax + '.'); });
+    });
+    s.assets.forEach(function(a){
+      var lim = a.type === 'SITELINK' ? PLATFORM.sitelinkMax : PLATFORM.calloutMax;
+      if (strLen(a.text) > lim) v.push((a.type === 'SITELINK' ? 'Sitelink' : 'Callout') + ' “' + a.text + '” is ' + strLen(a.text) + ' characters — the limit is ' + lim + '.');
+      if (a.type === 'SITELINK'){
+        if (strLen(a.description1) > PLATFORM.sitelinkDescMax) v.push('A sitelink description is over ' + PLATFORM.sitelinkDescMax + ' characters.');
+        if (strLen(a.description2) > PLATFORM.sitelinkDescMax) v.push('A sitelink description is over ' + PLATFORM.sitelinkDescMax + ' characters.');
+      }
+    });
+    s.keywords.forEach(function(k){ if (strLen(k.text) > PLATFORM.keywordMax) v.push('Keyword “' + k.text + '” is over ' + PLATFORM.keywordMax + ' characters.'); });
+  });
+  var seen = {};
+  return v.filter(function(x){ if (seen[x]) return false; seen[x] = 1; return true; });
+}
+function updateExportButton(){
+  var hard = hardLimitViolations();
+  $$('[data-a="export"]').forEach(function(b){
+    b.disabled = !!hard.length;
+    b.title = hard.length ? ('Export is locked until the platform-limit problems are fixed — e.g. ' + hard[0]) : 'Downloads google-work.json';
+  });
+}
+
+/* ------------------------------------------------------------------
+   export / import / reset / print / candidate code
+   ------------------------------------------------------------------ */
+function exportPayload(){
+  var items = lastVal.g1.concat(lastVal.g2);
+  var c = counts(items);
+  var byTab = {};
+  ['g1', 'g2'].forEach(function(t){ var cc = counts(lastVal[t]); byTab[t] = { passed: cc.passed, warned: cc.warned, failed: cc.failed, total: cc.total }; });
+  return {
+    candidate_code: state.code,
+    station: 'google',
+    entities: { account: state.account, conversions: state.conversions, g1: state.g1, g2: state.g2 },
+    brief: state.brief,
+    validation: { passed: c.passed, failed: c.failed, items: items },
+    score: {
+      passed: c.passed, warned: c.warned, failed: c.failed, total: c.total,
+      percent: c.total ? Math.round(100 * c.passed / c.total) : 0,
+      by_tab: byTab
+    },
+    exported_at: nowTs()
+  };
+}
+function doExport(){
+  var hard = hardLimitViolations();
+  if (hard.length){
+    flash('err', 'Export is locked — fix the platform-limit problems first: ' + hard[0]);
+    return;
+  }
+  var payload = exportPayload();
+  try {
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'google-work.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    logAction('—', 'Exported', 'station', 'google-work.json · ' + payload.score.passed + '/' + payload.score.total + ' checks passing', true);
+    saveLocal();
+    renderDock();
+    flash('ok', 'Downloaded google-work.json — send that file back to your reviewer. (Screenshots: Print / Save as PDF.)');
+  } catch (e) {
+    flash('err', 'Could not download automatically — use Print / Save as PDF, or check the browser download settings.');
+  }
+}
+function normalizeBuild(x){
+  x = x || {};
+  return {
+    campaign: x.campaign || null,
+    adgroups: Array.isArray(x.adgroups) ? x.adgroups : [],
+    keywords: Array.isArray(x.keywords) ? x.keywords : [],
+    rsas: Array.isArray(x.rsas) ? x.rsas : [],
+    assets: Array.isArray(x.assets) ? x.assets : []
+  };
+}
+function doImport(file){
+  var reader = new FileReader();
+  reader.onload = function(){
+    var d = null;
+    try { d = JSON.parse(String(reader.result)); } catch (e) { d = null; }
+    if (!d || d.station !== 'google' || !d.entities || !d.entities.g1 || !d.entities.g2){
+      flash('err', 'That file is not a Google station export (google-work.json).');
+      return;
+    }
+    if (buildHasWork() && !window.confirm('Replace the work currently in this station with the imported file?')) return;
+    var code2 = normCode(d.candidate_code || state.code);
+    state.code = code2;
+    state.brief = deriveBrief(code2);
+    if (d.entities.account && d.entities.account.id) state.account = d.entities.account;
+    if (Array.isArray(d.entities.conversions)) state.conversions = d.entities.conversions;
+    state.g1 = normalizeBuild(d.entities.g1);
+    state.g2 = normalizeBuild(d.entities.g2);
+    logAction('—', 'Imported', 'station', 'google-work.json', true);
+    saveLocal();
+    renderAll();
+    flash('ok', 'Imported the saved work for ' + state.code + '.');
+  };
+  reader.readAsText(file);
+}
+function buildHasWork(){
+  var g = state.g1;
+  if (g.campaign || g.adgroups.length || g.keywords.length || g.rsas.length || g.assets.length) return true;
+  return state.log.some(function(l){ return l.op === 'Created' || l.op === 'Updated' || l.op === 'Deleted'; });
+}
+var resetArmed = false, resetTimer = null;
+function handleResetClick(btn){
+  if (!resetArmed){
+    resetArmed = true;
+    btn.textContent = 'Click again to reset everything';
+    btn.className = 'btn danger armed';
+    resetTimer = setTimeout(function(){ resetArmed = false; btn.textContent = 'Reset station'; btn.className = 'btn danger'; }, 4000);
+    return;
+  }
+  clearTimeout(resetTimer);
+  resetArmed = false;
+  var code = state.code;
+  state = freshState(code);
+  logAction('—', 'Reset', 'station', 'cleared all work (candidate code kept)', true);
+  closeDrawer();
+  saveLocal();
+  renderAll();
+  flash('warn', 'Station reset. Your candidate code was kept.');
+}
+function applyCodeInput(){
+  var c = normCode($('#codeInput').value);
+  if (c === state.code){
+    $('#codeInput').value = state.code;
+    flash('ok', 'Candidate code unchanged: ' + c + '.');
+    return;
+  }
+  if (buildHasWork() && !window.confirm('Switch to candidate code ' + c + '? The station restarts with that candidate’s seeded numbers and the current work is cleared.')){
+    $('#codeInput').value = state.code;
+    return;
+  }
+  state = freshState(c);
+  saveLocal();
+  renderAll();
+  flash('ok', 'Station seeded for ' + c + ' — brief numbers, account and checks are now this candidate’s.');
+}
+
+/* ------------------------------------------------------------------
+   events
+   ------------------------------------------------------------------ */
+function chipClick(node){
+  if (!drawer) return;
+  syncInputsToDraft();
+  var nm = node.getAttribute('data-name');
+  var val = node.getAttribute('data-val');
+  var arr = (getPath(drawer.draft, nm) || []).slice();
+  var i = arr.indexOf(val);
+  if (i >= 0) arr.splice(i, 1); else arr.push(val);
+  setPath(drawer.draft, nm, arr);
+  renderDrawer();
+}
+function rowAdd(node){
+  if (!drawer || drawer.kind !== 'rsa') return;
+  syncInputsToDraft();
+  snapshotRsa();
+  var kind = node.getAttribute('data-kind');
+  if (kind === 'headline'){
+    if (drawer.draft.headlines.length >= PLATFORM.headlineCap){ drawer.errors = { headlines: 'Up to ' + PLATFORM.headlineCap + ' headlines.' }; renderDrawer(); return; }
+    drawer.draft.headlines.push('');
+  } else {
+    if (drawer.draft.descriptions.length >= PLATFORM.descCap){ drawer.errors = { descriptions: 'Up to ' + PLATFORM.descCap + ' descriptions.' }; renderDrawer(); return; }
+    drawer.draft.descriptions.push('');
+  }
+  drawer.errors = {};
+  renderDrawer();
+}
+function rowDel(node){
+  if (!drawer || drawer.kind !== 'rsa') return;
+  syncInputsToDraft();
+  snapshotRsa();
+  var kind = node.getAttribute('data-kind');
+  var i = Number(node.getAttribute('data-i'));
+  if (kind === 'headline'){ if (i < 0 || i >= drawer.draft.headlines.length) return; drawer.draft.headlines.splice(i, 1); }
+  else { if (i < 0 || i >= drawer.draft.descriptions.length) return; drawer.draft.descriptions.splice(i, 1); }
+  drawer.errors = {};
+  renderDrawer();
+}
+document.addEventListener('click', function(e){
+  var node = (e.target && e.target.closest) ? e.target.closest('[data-a]') : null;
+  if (!node) return;
+  var a = node.getAttribute('data-a');
+  switch (a){
+    case 'tab': ui.tab = node.getAttribute('data-v'); renderTabs(); renderPane(); return;
+    case 'pane': ui.pane[node.getAttribute('data-tab')] = node.getAttribute('data-v'); renderRails(); renderPane(); return;
+    case 'dock': ui.dockOpen = !ui.dockOpen; renderDock(); return;
+    case 'export': doExport(); return;
+    case 'import': $('#importFile').click(); return;
+    case 'print': window.print(); return;
+    case 'reset': handleResetClick(node); return;
+    case 'campaign-new': openCampaignDrawer('g1', 'create'); return;
+    case 'campaign-edit': openCampaignDrawer(node.getAttribute('data-tab'), 'edit'); return;
+    case 'adgroup-new': openAdgroupDrawer(node.getAttribute('data-tab'), 'create'); return;
+    case 'adgroup-edit': openAdgroupDrawer(node.getAttribute('data-tab'), 'edit', node.getAttribute('data-id')); return;
+    case 'keyword-new': openKeywordDrawer(node.getAttribute('data-tab'), 'create'); return;
+    case 'keyword-edit': openKeywordDrawer(node.getAttribute('data-tab'), 'edit', node.getAttribute('data-id')); return;
+    case 'negatives-batch': openNegativesDrawer(node.getAttribute('data-tab')); return;
+    case 'rsa-new': openRsaDrawer(node.getAttribute('data-tab'), 'create', null, node.getAttribute('data-id')); return;
+    case 'rsa-edit': openRsaDrawer(node.getAttribute('data-tab'), 'edit', node.getAttribute('data-id')); return;
+    case 'asset-new': openAssetDrawer(node.getAttribute('data-tab'), 'create', null, node.getAttribute('data-type')); return;
+    case 'asset-edit': openAssetDrawer(node.getAttribute('data-tab'), 'edit', node.getAttribute('data-id')); return;
+    case 'conv-new': openConversionDrawer(node.getAttribute('data-tab'), 'create'); return;
+    case 'conv-edit': openConversionDrawer(node.getAttribute('data-tab'), 'edit', node.getAttribute('data-id')); return;
+    case 'restricted': restrictedAttempt(node.getAttribute('data-surface'), node.getAttribute('data-label')); return;
+    case 'chip': chipClick(node); return;
+    case 'row-add': rowAdd(node); return;
+    case 'row-del': rowDel(node); return;
+    case 'drawer-close': closeDrawer(); return;
+    case 'drawer-save': saveDrawer(); return;
+    case 'drawer-delete': deleteEntity(); return;
+    default: return;
+  }
+});
+document.addEventListener('input', function(e){
+  var t = e.target;
+  if (t && t.getAttribute && t.getAttribute('data-count')){
+    var span = $('#drawerBody [data-for="' + t.getAttribute('data-name') + '"]');
+    if (span) setCounter(span, strLen(t.value), Number(t.getAttribute('data-count')));
+  }
+});
+document.addEventListener('change', function(e){
+  var t = e.target;
+  if (t && t.getAttribute && t.getAttribute('data-a') === 'conv-toggle'){
+    var cv = state.conversions.filter(function(x){ return x.id === t.getAttribute('data-id'); })[0];
+    if (cv){
+      cv.primary_for_goal = !!t.checked;
+      logAction(ui.tab.toUpperCase(), 'Updated', 'conversion', cv.name + ' — primary ' + (cv.primary_for_goal ? 'on' : 'off'), true);
+      saveLocal();
+      renderAll();
+      flash('ok', '“' + cv.name + '” is now ' + (cv.primary_for_goal ? 'primary for the goal.' : 'secondary.'));
+    }
+  }
+});
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && drawer) closeDrawer();
+});
+$('#codeInput').addEventListener('change', applyCodeInput);
+$('#codeInput').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); applyCodeInput(); } });
+$('#importFile').addEventListener('change', function(){
+  if (this.files && this.files[0]) doImport(this.files[0]);
+  this.value = '';
+});
+$('#overlay').addEventListener('click', function(){ closeDrawer(); });
+
+/* ------------------------------------------------------------------
+   boot
+   ------------------------------------------------------------------ */
+function boot(){
+  if (!loadLocal()){ state = freshState(readCode()); saveLocal(); }
+  if (!storageOk){
+    var n = $('#saveNote');
+    if (n){ n.hidden = false; n.textContent = 'Autosave is unavailable in this browser mode — use Export my work to keep a copy of your station.'; }
+  }
+  renderAll();
+}
+boot();
+</script>
+</body>
+</html>

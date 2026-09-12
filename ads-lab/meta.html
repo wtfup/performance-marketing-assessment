@@ -1,0 +1,1780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meta build station — practice lab</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #f0f2f5; color: #1c1e21;
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; cursor: pointer; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .muted { color: #65676b; }
+  .small { font-size: 12px; }
+
+  .btn {
+    background: #fff; border: 1px solid #ccd0d5; border-radius: 8px;
+    padding: 6px 12px; color: #1c1e21; white-space: nowrap;
+  }
+  .btn:hover { background: #f5f6f7; }
+  .btn.primary { background: #1877f2; border-color: #1877f2; color: #fff; }
+  .btn.primary:hover { background: #166fe5; }
+  .btn.danger { background: #fff; border-color: #e4b3ad; color: #b42318; }
+  .btn.danger:hover { background: #fdecea; }
+  .btn.danger.armed { background: #b42318; border-color: #b42318; color: #fff; }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* ---------------- header ---------------- */
+  #hdr {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px;
+    background: #fff; border-bottom: 1px solid #dddfe2; padding: 10px 16px;
+  }
+  #hdr .brand { font-weight: 700; font-size: 15px; white-space: nowrap; }
+  #hdr .brand .lab {
+    font-weight: 400; font-size: 11px; color: #65676b;
+    border: 1px solid #dddfe2; border-radius: 10px; padding: 1px 7px; margin-left: 7px; vertical-align: 2px;
+  }
+  .codebox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #65676b; }
+  .codebox input {
+    font: 600 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    text-transform: uppercase; letter-spacing: .4px;
+    border: 1px solid #ccd0d5; border-radius: 8px; padding: 6px 9px; width: 170px;
+  }
+  .codebox input:focus { outline: 2px solid #a8c7fa; border-color: #1877f2; }
+  #hdr .hdr-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+  #hdr .hintline { flex-basis: 100%; font-size: 12px; color: #65676b; }
+
+  #flash { padding: 8px 16px; font-size: 13px; border-bottom: 1px solid transparent; }
+  #flash.ok { background: #e8f5ec; border-color: #c3e6cf; color: #1a7f37; }
+  #flash.warn { background: #fff8e1; border-color: #f0e0a8; color: #9a6700; }
+  #flash.err { background: #fdecea; border-color: #f3c6c0; color: #b42318; }
+  #flash ul { margin: 4px 0 0 18px; padding: 0; }
+
+  /* ---------------- tabs ---------------- */
+  #tabs {
+    position: sticky; top: 51px; z-index: 25;
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    background: #fff; border-bottom: 1px solid #dddfe2; padding: 8px 16px;
+  }
+  #tabs button {
+    border: 1px solid #dddfe2; background: #f7f8fa; border-radius: 999px;
+    padding: 7px 14px; font-size: 13px; color: #1c1e21;
+  }
+  #tabs button:hover { background: #eef0f2; }
+  #tabs button.active { background: #e7f3ff; border-color: #a8c7fa; color: #1877f2; font-weight: 600; }
+  #tabs .tabs-note { font-size: 12px; color: #65676b; margin-left: auto; }
+
+  /* ---------------- layout ---------------- */
+  #main { padding: 16px 22px 90px; max-width: 1500px; }
+  body.log-open #main { padding-bottom: 320px; }
+  .card { background: #fff; border: 1px solid #dddfe2; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 8px; }
+  .card p { margin: 6px 0; }
+  .brief ul { margin: 6px 0 6px 18px; padding: 0; }
+  .brief li { margin: 3px 0; }
+  .brief .num { font-weight: 700; }
+  .brief .derived-note { font-size: 12px; color: #65676b; border-top: 1px dashed #dddfe2; padding-top: 8px; margin-top: 10px; }
+
+  .cols { display: flex; gap: 16px; align-items: flex-start; }
+  .col-work { flex: 1 1 auto; min-width: 0; }
+  .col-checks { flex: 0 0 400px; width: 400px; position: sticky; top: 108px; }
+  @media (max-width: 1150px) {
+    .cols { display: block; }
+    .col-checks { width: auto; flex: none; position: static; }
+  }
+
+  /* ---------------- tables ---------------- */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 600; color: #65676b; font-size: 12px; padding: 7px 10px; border-bottom: 1px solid #dddfe2; white-space: nowrap; }
+  td { padding: 9px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr.clickable { cursor: pointer; }
+  tbody tr.clickable:hover { background: #f7f8fa; }
+
+  .badge { display: inline-block; border-radius: 10px; padding: 1px 8px; font-size: 11.5px; background: #e4e6eb; color: #4b4f56; white-space: nowrap; }
+  .badge.blue { background: #e7f3ff; color: #1877f2; }
+  .badge.green { background: #e8f5ec; color: #1a7f37; }
+  .badge.red { background: #fdecea; color: #b42318; }
+  .badge.amber { background: #fff8e1; color: #9a6700; }
+  .ellip { display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+
+  .empty { padding: 24px 16px; text-align: center; color: #65676b; }
+  .empty b { color: #1c1e21; display: block; margin-bottom: 4px; }
+  .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .card-head h2 { margin: 0; }
+  .card-head .muted { font-size: 12px; }
+
+  /* ---------------- checks panel ---------------- */
+  .checks-summary { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .checks-summary .sum { font-weight: 600; }
+  #export-lock { background: #fdecea; border: 1px solid #f3c6c0; color: #b42318; border-radius: 8px; padding: 8px 10px; font-size: 12.5px; margin-bottom: 10px; }
+  .chk { display: flex; gap: 9px; padding: 7px 0; border-bottom: 1px solid #f0f0f0; }
+  .chk:last-child { border-bottom: 0; }
+  .chk .chip { flex: 0 0 auto; border-radius: 999px; font-size: 11px; font-weight: 700; padding: 2px 9px; margin-top: 1px; text-transform: uppercase; letter-spacing: .3px; }
+  .chip.pass { background: #e8f5ec; color: #1a7f37; }
+  .chip.warn { background: #fff8e1; color: #9a6700; }
+  .chip.fail { background: #fdecea; color: #b42318; }
+  .chk .cl { font-size: 13px; font-weight: 600; }
+  .chk .cd { font-size: 12px; color: #65676b; margin-top: 1px; }
+  .chk.fail .cd { color: #b42318; }
+  .chk.warn .cd { color: #9a6700; }
+  .section-label { font-size: 11px; font-weight: 700; color: #65676b; text-transform: uppercase; letter-spacing: .5px; margin: 10px 0 2px; }
+
+  /* ---------------- drawer ---------------- */
+  #drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 40; }
+  #drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 560px; max-width: 94vw; background: #fff; z-index: 50; display: flex; flex-direction: column; box-shadow: -8px 0 24px rgba(0,0,0,.14); }
+  .drawer-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid #dddfe2; }
+  .drawer-head h2 { font-size: 16px; margin: 0; }
+  .drawer-head .spacer { flex: 1; }
+  .drawer-head .icon-btn { border: 0; background: none; font-size: 18px; color: #65676b; padding: 2px 6px; border-radius: 6px; }
+  .drawer-head .icon-btn:hover { background: #f0f2f5; }
+  .drawer-body { flex: 1; overflow: auto; padding: 14px 18px 20px; }
+  .drawer-foot { display: flex; gap: 8px; align-items: center; padding: 12px 18px; border-top: 1px solid #dddfe2; background: #fafbfc; }
+  .drawer-foot .spacer { flex: 1; }
+  .apply-error { background: #fdecea; border: 1px solid #f3c6c0; color: #b42318; border-radius: 8px; padding: 8px 10px; font-size: 12.5px; margin-bottom: 10px; }
+  .apply-error ul { margin: 4px 0 0 16px; padding: 0; }
+
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: #65676b; margin-bottom: 4px; }
+  .field input[type=text], .field input[type=number], .field select, .field textarea {
+    width: 100%; border: 1px solid #ccd0d5; border-radius: 8px; padding: 7px 9px;
+    font: inherit; font-size: 13px; color: #1c1e21; background: #fff;
+  }
+  .field textarea { min-height: 90px; resize: vertical; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid #a8c7fa; border-color: #1877f2; }
+  .counter { font-size: 11.5px; color: #65676b; margin-top: 3px; }
+  .counter.warn { color: #9a6700; font-weight: 600; }
+  .counter.err { color: #b42318; font-weight: 600; }
+  .field-msg { font-size: 12px; margin-top: 4px; }
+  .field-msg.err { color: #b42318; }
+  .hint { font-size: 12px; color: #65676b; margin-top: 3px; }
+
+  .fieldset { border: 1px solid #dddfe2; border-radius: 8px; padding: 10px 12px 4px; margin: 0 0 14px; }
+  .fieldset > legend { font-size: 12px; font-weight: 700; color: #65676b; padding: 0 4px; }
+  .fieldset .hint { margin: 0 0 8px; }
+
+  .chips-box { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid #ccd0d5; border-radius: 8px; padding: 6px; background: #fff; }
+  .chips-box input { border: 0 !important; outline: 0 !important; box-shadow: none !important; flex: 1; min-width: 130px; padding: 3px 2px !important; }
+  .chip-item { display: inline-flex; align-items: center; gap: 6px; background: #e7f3ff; color: #166fe5; border-radius: 12px; padding: 2px 8px; font-size: 12px; }
+  .chip-item button { border: 0; background: none; color: #166fe5; padding: 0 0 0 2px; font-size: 13px; line-height: 1; }
+  .chip-item button:hover { color: #b42318; }
+
+  .check-field .check { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: #1c1e21; }
+  .check-field .check input { margin: 0; }
+  .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 12px; padding: 2px 0 6px; }
+  .check-grid label { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #1c1e21; font-weight: 400; }
+
+  /* ---------------- log panel ---------------- */
+  #logpanel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; background: #fff; border-top: 1px solid #dddfe2; box-shadow: 0 -2px 10px rgba(0,0,0,.06); }
+  #logpanel .log-head { display: flex; align-items: center; gap: 12px; padding: 7px 14px; }
+  #logpanel .log-head .toggle { border: 0; background: none; font-weight: 700; font-size: 13px; padding: 2px 0; color: #1c1e21; }
+  #logpanel .log-body { display: none; max-height: 250px; overflow: auto; border-top: 1px solid #e4e6eb; }
+  body.log-open #logpanel .log-body { display: block; }
+  #logpanel table { font-size: 12px; }
+  #logpanel td, #logpanel th { padding: 5px 10px; }
+  #logpanel tr.blocked td { background: #fdecea; }
+
+  @media (max-width: 1120px) {
+    #main { padding: 14px 14px 90px; }
+    #drawer { width: 480px; }
+  }
+
+  @media print {
+    #hdr, #tabs, #logpanel, #drawer, #drawer-backdrop, #flash, .no-print { display: none !important; }
+    body { background: #fff; }
+    #main { padding: 0; max-width: none; }
+    .cols { display: block; }
+    .col-checks { width: auto; position: static; }
+    .card { break-inside: avoid; border-color: #bbb; }
+  }
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="brand">Meta build station<span class="lab">practice lab</span></div>
+  <label class="codebox">Your candidate code
+    <input id="code" type="text" spellcheck="false" autocomplete="off" placeholder="WTF-PM-0007">
+  </label>
+  <div class="hdr-actions no-print">
+    <button class="btn" id="btn-import" type="button">Import saved file</button>
+    <input type="file" id="file-import" accept=".json,application/json" style="display:none">
+    <button class="btn" id="btn-print" type="button">Print / Save as PDF</button>
+    <button class="btn danger" id="btn-reset" type="button">Reset station</button>
+    <button class="btn primary" id="btn-export" type="button">Export my work</button>
+  </div>
+  <div class="hintline">Work autosaves in this browser. The numbers in each brief come from your candidate code — they differ for every candidate. When you are done: <b>Export my work</b> and send the downloaded <span class="mono">meta-work.json</span> back to your reviewer.</div>
+</header>
+
+<div id="flash" hidden></div>
+
+<nav id="tabs" class="no-print" aria-label="Build tasks"></nav>
+
+<main id="main"></main>
+
+<section id="logpanel" class="no-print" aria-label="Action log">
+  <div class="log-head">
+    <button class="toggle" id="log-toggle" type="button">What you've done ▸</button>
+    <span class="muted small" id="log-count"></span>
+    <span class="muted small" id="save-state"></span>
+  </div>
+  <div class="log-body">
+    <div class="tbl-wrap" id="log-table"></div>
+  </div>
+</section>
+
+<div id="drawer-backdrop" hidden></div>
+<aside id="drawer" role="dialog" aria-modal="true" hidden></aside>
+
+<script>
+'use strict';
+(function () {
+
+  /* ================================================================== *
+   * tiny DOM helpers
+   * ================================================================== */
+  function $(sel, root) { return (root || document).querySelector(sel); }
+
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function (k) {
+        var v = attrs[k];
+        if (v == null || v === false) return;
+        if (k === 'class') n.className = v;
+        else if (k === 'text') n.textContent = v;
+        else if (k.indexOf('on') === 0) n.addEventListener(k.slice(2), v);
+        else if (v === true) n.setAttribute(k, '');
+        else n.setAttribute(k, String(v));
+      });
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var kids = arguments[i];
+      if (kids == null || kids === false) continue;
+      (Array.isArray(kids) ? kids : [kids]).forEach(function (kid) {
+        if (kid == null || kid === false) return;
+        n.appendChild(typeof kid === 'string' ? document.createTextNode(kid) : kid);
+      });
+    }
+    return n;
+  }
+
+  function clearNode(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+  function dget(obj, path) {
+    return path.split('.').reduce(function (o, k) { return (o == null ? undefined : o[k]); }, obj);
+  }
+  function dset(obj, path, val) {
+    var parts = path.split('.');
+    var o = obj;
+    for (var i = 0; i < parts.length - 1; i++) {
+      if (typeof o[parts[i]] !== 'object' || o[parts[i]] === null) o[parts[i]] = {};
+      o = o[parts[i]];
+    }
+    o[parts[parts.length - 1]] = val;
+  }
+
+  /* ================================================================== *
+   * candidate-code seeding helper (from the station contract, verbatim)
+   * ================================================================== */
+  function adsLabSeed(code){
+    const s = String(code || 'WTF-PM-0000').trim().toUpperCase();
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return function(){ // mulberry32
+      h |= 0; h = h + 0x6D2B79F5 | 0;
+      let t = Math.imul(h ^ h >>> 15, 1 | h);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  /* ================================================================== *
+   * per-candidate numbers — everything variable derives from the code
+   * ================================================================== */
+  var DEFAULT_CODE = 'WTF-PM-0000';
+  var code = DEFAULT_CODE;
+  var B = null;               // derived brief numbers
+  var STORE_KEY = 'adsLab.meta';
+  var CODE_KEY = 'adsLab.code';
+  var storageOk = true;
+
+  function readCode() {
+    try {
+      var c = localStorage.getItem(CODE_KEY);
+      if (c && String(c).trim()) return String(c).trim().toUpperCase();
+    } catch (e) { storageOk = false; }
+    return DEFAULT_CODE;
+  }
+
+  function deriveBrief() {
+    const rnd = adsLabSeed(code);
+    const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+    B = {
+      t1Budget: pick([4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000]),
+      t2Budget: pick([3000, 3500, 4000, 4500, 5000, 5500]),
+      t3Budget: pick([2500, 3000, 3500, 4000, 4500, 5000]),
+      t3RadiusKm: pick([4, 5, 6, 7, 8, 9, 10])
+    };
+  }
+
+  /* ================================================================== *
+   * state (in-page; persisted to localStorage on every change)
+   * ================================================================== */
+  var state = { code: DEFAULT_CODE, entities: { campaigns: [], adsets: [], ads: [] }, log: [], seq: 0, saved_at: null };
+
+  function saveLocal() {
+    if (!storageOk) { renderSaveState(); return; }
+    state.code = code;
+    state.saved_at = new Date().toISOString();
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+    catch (e) { storageOk = false; }
+    renderSaveState();
+  }
+
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return false;
+      var d = JSON.parse(raw);
+      if (!d || typeof d !== 'object' || !d.entities) return false;
+      state.entities = {
+        campaigns: Array.isArray(d.entities.campaigns) ? d.entities.campaigns : [],
+        adsets: Array.isArray(d.entities.adsets) ? d.entities.adsets : [],
+        ads: Array.isArray(d.entities.ads) ? d.entities.ads : []
+      };
+      state.log = Array.isArray(d.log) ? d.log.slice(-300) : [];
+      state.seq = Number(d.seq) || 0;
+      if (typeof d.code === 'string' && d.code.trim()) code = d.code.trim().toUpperCase();
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function nextId(prefix) {
+    state.seq = (state.seq || 0) + 1;
+    return prefix + '_' + state.seq;
+  }
+
+  function logAction(action, entity, id, result, detail) {
+    state.log.push({
+      ts: new Date().toISOString(),
+      action: action,
+      entity: entity || '',
+      id: id || '',
+      result: result || 'ok',
+      detail: detail || ''
+    });
+    if (state.log.length > 300) state.log = state.log.slice(-300);
+  }
+
+  function ents(kind) { return state.entities[kind]; }
+  function entitiesFor(task) {
+    return {
+      campaigns: ents('campaigns').filter(function (x) { return x.task === task; }),
+      adsets: ents('adsets').filter(function (x) { return x.task === task; }),
+      ads: ents('ads').filter(function (x) { return x.task === task; })
+    };
+  }
+
+  /* ================================================================== *
+   * shared vocabulary (plain language values)
+   * ================================================================== */
+  var V = {
+    objective: ['Awareness', 'Traffic', 'Engagement', 'Leads', 'App promotion', 'Sales'],
+    buying_type: [['AUCTION', 'Auction (recommended)'], ['RESERVED', 'Reserved']],
+    budget_optimization: [['campaign', 'Campaign level — one budget (CBO)'], ['ad_set', 'Ad set level — budget per ad set']],
+    bid_strategy: ['Highest volume', 'Cost per result goal', 'ROAS goal', 'Bid cap'],
+    status: [['ACTIVE', 'Active'], ['PAUSED', 'Paused']],
+    optimization_goal: ['Lead', 'Conversions', 'Link clicks', 'Landing page views', 'Reach', 'Impressions', 'Engagement', 'App installs'],
+    billing_event: ['Impressions', 'Link clicks', 'Post engagement', 'ThruPlay'],
+    attribution_setting: ['7-day click', '1-day click', '1-day view', '7-day click, 1-day view'],
+    conversion_event: ['Lead', 'Purchase', 'Complete registration', 'Add to cart', 'Subscribe'],
+    format: ['Single image', 'Single video', 'Carousel', 'Collection'],
+    cta: ['Learn more', 'Shop now', 'Sign up', 'Book now', 'Contact us', 'Get offer', 'Download', 'Send message', 'WhatsApp message', 'Call now', 'Install app', 'Use app', 'Subscribe'],
+    platform: ['Facebook', 'Instagram', 'Messenger', 'Audience Network', 'Threads', 'WhatsApp'],
+    gender: ['male', 'female']
+  };
+
+  var TASKS = {
+    T1: {
+      short: 'T1',
+      label: 'T1 · ₹24,000 all-access pass',
+      cfg: {
+        objective: 'Leads',
+        budgetKey: 't1Budget',
+        goal: 'Lead',
+        conversion: 'Lead',
+        attribution: '7-day click, 1-day view',
+        ctas: ['WhatsApp message', 'Call now'],
+        minAdsets: 2,
+        minAds: 3
+      }
+    },
+    T2: {
+      short: 'T2',
+      label: 'T2 · ₹100 daily pass (app)',
+      cfg: {
+        objective: 'Sales',
+        budgetKey: 't2Budget',
+        goal: 'Conversions',
+        conversion: 'Purchase',
+        ctas: ['Install app', 'Use app', 'Download', 'Shop now'],
+        minAdsets: 1,
+        minAds: 1
+      }
+    },
+    T3: {
+      short: 'T3',
+      label: 'T3 · Noida gym walk-in leads',
+      cfg: {
+        objective: 'Leads',
+        budgetKey: 't3Budget',
+        goal: 'Lead',
+        conversion: 'Lead',
+        radiusKey: 't3RadiusKm',
+        minAdsets: 1,
+        minAds: 1
+      }
+    }
+  };
+
+  var LIMITS = {
+    headline: { rec: 40, hard: 255, label: 'headline' },
+    primary_text: { rec: 125, hard: 2200, label: 'primary text' },
+    description: { rec: 25, hard: 255, label: 'description' }
+  };
+
+  /* ================================================================== *
+   * formatting helpers
+   * ================================================================== */
+  function fmtRs(n) {
+    var v = Number(n);
+    if (n == null || n === '' || !isFinite(v)) return '—';
+    return '₹' + v.toLocaleString('en-IN');
+  }
+  function disp(v) {
+    if (v === true) return 'yes';
+    if (v === false) return 'no';
+    if (v == null || v === '') return '—';
+    return String(v);
+  }
+  function nameOf(e) {
+    if (e && e.name != null && String(e.name).trim()) return String(e.name).trim();
+    return (e && e.id) ? String(e.id) : 'item';
+  }
+  function num(v) { var n = Number(v); return (v === '' || v == null || !isFinite(n)) ? null : n; }
+  function anyText(v) { return v != null && String(v).trim() !== ''; }
+  function parseParams(s) {
+    var out = {};
+    String(s || '').split('&').forEach(function (pair) {
+      var i = pair.indexOf('=');
+      if (i < 0) { var k0 = pair.trim().toLowerCase(); if (k0) out[k0] = ''; return; }
+      var k = pair.slice(0, i).trim().toLowerCase();
+      var v = pair.slice(i + 1).trim();
+      if (k) out[k] = v;
+    });
+    return out;
+  }
+
+  /* ================================================================== *
+   * the checks engine — the same rules the reviewer will use
+   * ================================================================== */
+  function runChecks(taskId) {
+    var cfg = TASKS[taskId].cfg;
+    var es = entitiesFor(taskId);
+    var cs = es.campaigns, ss = es.adsets, ads = es.ads;
+    var items = [];
+    function add(id, label, status, detail) {
+      items.push({ task: taskId, id: id, label: label, status: status, detail: detail || '' });
+    }
+    function names(list) { return list.map(function (e) { return '"' + nameOf(e) + '"'; }).join(', '); }
+    var budget = B[cfg.budgetKey];
+
+    /* ---- campaign ---- */
+    if (!cs.length) add('campaign_exists', 'A campaign is built', 'fail', 'Nothing here yet — click “New campaign” and build it.');
+    else add('campaign_exists', 'A campaign is built', 'pass', cs.length + ' campaign' + (cs.length > 1 ? 's' : '') + ' in this tab.');
+
+    if (!cs.length) {
+      add('campaign_objective', 'Objective is "' + cfg.objective + '"', 'fail', 'No campaign yet.');
+    } else {
+      var bad = cs.filter(function (c) { return c.objective !== cfg.objective; });
+      if (bad.length) add('campaign_objective', 'Objective is "' + cfg.objective + '"', 'fail', names(bad) + ' — the brief needs ' + cfg.objective + '.');
+      else add('campaign_objective', 'Objective is "' + cfg.objective + '"', 'pass', '');
+    }
+
+    if (!cs.length) add('campaign_auction', 'Buys at auction', 'fail', 'No campaign yet.');
+    else {
+      var bad2 = cs.filter(function (c) { return c.buying_type !== 'AUCTION'; });
+      if (bad2.length) add('campaign_auction', 'Buys at auction', 'fail', names(bad2) + ' is not set to auction buying.');
+      else add('campaign_auction', 'Buys at auction', 'pass', '');
+    }
+
+    var budLabel = 'Campaign daily budget is ' + fmtRs(budget) + ' (from your candidate code)';
+    if (!cs.length) add('campaign_budget', budLabel, 'fail', 'No campaign yet.');
+    else {
+      var bad3 = cs.filter(function (c) { return !(c.budget_optimization === 'campaign' && num(c.daily_budget) === budget); });
+      if (bad3.length) {
+        add('campaign_budget', budLabel, 'fail', bad3.map(function (c) {
+          if (c.budget_optimization !== 'campaign') return '"' + nameOf(c) + '" is set to ad-set-level budget — the brief wants one campaign-level budget';
+          if (!anyText(c.daily_budget)) return '"' + nameOf(c) + '" has no daily budget';
+          return '"' + nameOf(c) + '" is ' + fmtRs(c.daily_budget) + ' — the brief number is ' + fmtRs(budget);
+        }).join(' · '));
+      } else add('campaign_budget', budLabel, 'pass', '');
+    }
+
+    if (!cs.length) add('campaign_bid', 'Bid strategy is one of the four supported choices', 'fail', 'No campaign yet.');
+    else {
+      var bad4 = cs.filter(function (c) { return V.bid_strategy.indexOf(c.bid_strategy) < 0; });
+      if (bad4.length) add('campaign_bid', 'Bid strategy is one of the four supported choices', 'fail', names(bad4) + ' — choose Highest volume, Cost per result goal, ROAS goal or Bid cap.');
+      else add('campaign_bid', 'Bid strategy is one of the four supported choices', 'pass', '');
+    }
+
+    var cpr = cs.filter(function (c) { return c.bid_strategy === 'Cost per result goal'; });
+    if (!cs.length) add('campaign_cpr', 'Cost-per-result goal has a value above 0 (when that strategy is used)', 'fail', 'No campaign yet.');
+    else if (!cpr.length) add('campaign_cpr', 'Cost-per-result goal has a value above 0 (when that strategy is used)', 'pass', 'Not used — you picked a different bid strategy.');
+    else {
+      var bad5 = cpr.filter(function (c) { return !(num(c.cost_per_result_goal) > 0); });
+      if (bad5.length) add('campaign_cpr', 'Cost-per-result goal has a value above 0 (when that strategy is used)', 'fail', names(bad5) + ' uses “Cost per result goal” but no goal value is set.');
+      else add('campaign_cpr', 'Cost-per-result goal has a value above 0 (when that strategy is used)', 'pass', '');
+    }
+
+    /* ---- the budget trap: campaign-level budget must not be repeated on ad sets ---- */
+    if (!cs.length) add('budget_single_place', 'Budget is set in one place only — not both campaign and ad sets', 'fail', 'No campaign yet.');
+    else {
+      var dupes = [];
+      cs.forEach(function (c) {
+        if (c.budget_optimization === 'campaign' && num(c.daily_budget) != null) {
+          ss.filter(function (s) { return s.campaign_id === c.id && num(s.daily_budget) != null; })
+            .forEach(function (s) { dupes.push('"' + nameOf(s) + '"'); });
+        }
+      });
+      if (dupes.length) add('budget_single_place', 'Budget is set in one place only — not both campaign and ad sets', 'fail', 'Ad set ' + dupes.join(', ') + ' also carries a daily budget while the campaign already has a campaign-level budget — remove the ad-set budgets.');
+      else add('budget_single_place', 'Budget is set in one place only — not both campaign and ad sets', 'pass', '');
+    }
+
+    /* ---- hierarchy ---- */
+    if (!ss.length) add('adset_parent', 'Every ad set sits under the campaign', 'fail', 'No ad sets yet.');
+    else {
+      var orphan = ss.filter(function (s) { return !cs.some(function (c) { return c.id === s.campaign_id; }); });
+      if (orphan.length) add('adset_parent', 'Every ad set sits under the campaign', 'fail', names(orphan) + ' has no valid parent campaign.');
+      else add('adset_parent', 'Every ad set sits under the campaign', 'pass', '');
+    }
+    if (!ads.length) add('ad_parent', 'Every ad sits under an ad set', 'fail', 'No ads yet.');
+    else {
+      var orphan2 = ads.filter(function (a) { return !ss.some(function (s) { return s.id === a.adset_id; }); });
+      if (orphan2.length) add('ad_parent', 'Every ad sits under an ad set', 'fail', names(orphan2) + ' has no valid parent ad set.');
+      else add('ad_parent', 'Every ad sits under an ad set', 'pass', '');
+    }
+
+    /* ---- ad set required fields ---- */
+    var REQ = ['optimization_goal', 'billing_event', 'attribution_setting', 'conversion_event'];
+    var REQ_LABEL = { optimization_goal: 'optimisation goal', billing_event: 'billing event', attribution_setting: 'attribution setting', conversion_event: 'conversion event' };
+    if (!ss.length) add('adset_required', 'Ad sets carry optimisation goal, billing event, attribution and conversion event', 'fail', 'No ad sets yet.');
+    else {
+      var miss = [];
+      ss.forEach(function (s) {
+        var m = REQ.filter(function (k) { return !anyText(s[k]); }).map(function (k) { return REQ_LABEL[k]; });
+        if (m.length) miss.push('"' + nameOf(s) + '" is missing: ' + m.join(', '));
+      });
+      if (miss.length) add('adset_required', 'Ad sets carry optimisation goal, billing event, attribution and conversion event', 'fail', miss.join(' · '));
+      else add('adset_required', 'Ad sets carry optimisation goal, billing event, attribution and conversion event', 'pass', '');
+    }
+
+    /* ---- geo ---- */
+    if (!ss.length) add('adset_geo', 'Ad sets target at least one location', 'fail', 'No ad sets yet.');
+    else {
+      var noGeo = ss.filter(function (s) { return !(Array.isArray(s.targeting && s.targeting.geo) && s.targeting.geo.length); });
+      if (noGeo.length) add('adset_geo', 'Ad sets target at least one location', 'fail', names(noGeo) + ' has no location targeting — add at least one place.');
+      else add('adset_geo', 'Ad sets target at least one location', 'pass', '');
+    }
+
+    /* ---- age ---- */
+    if (!ss.length) add('adset_age', 'Age range is inside 18–65', 'fail', 'No ad sets yet.');
+    else {
+      var badAge = ss.filter(function (s) {
+        var lo = num((s.targeting || {}).age_min), hi = num((s.targeting || {}).age_max);
+        return !(lo != null && hi != null && lo >= 18 && hi <= 65 && lo <= hi);
+      });
+      if (badAge.length) add('adset_age', 'Age range is inside 18–65', 'fail', names(badAge) + ' — set an age range that stays inside 18 to 65 (low ≤ high).');
+      else add('adset_age', 'Age range is inside 18–65', 'pass', '');
+    }
+
+    /* ---- the exclusion trap ---- */
+    if (!ss.length) add('adset_exclusions', 'People who already bought / are members are excluded', 'fail', 'No ad sets yet.');
+    else {
+      var noEx = ss.filter(function (s) { return !(Array.isArray((s.targeting || {}).excluded_custom_audiences) && s.targeting.excluded_custom_audiences.length); });
+      if (noEx.length) add('adset_exclusions', 'People who already bought / are members are excluded', 'fail', names(noEx) + ' excludes nobody — add an excluded audience (current members / past buyers) so the ad is not re-served to them.');
+      else add('adset_exclusions', 'People who already bought / are members are excluded', 'pass', '');
+    }
+
+    /* ---- creative required + limits ---- */
+    if (!ads.length) add('creative_required', 'Ads have headline, primary text and description', 'fail', 'No ads yet.');
+    else {
+      var missC = ads.filter(function (a) { return !(anyText(a.headline) && anyText(a.primary_text) && anyText(a.description)); });
+      if (missC.length) add('creative_required', 'Ads have headline, primary text and description', 'fail', names(missC) + ' is missing copy — fill in headline, primary text and description.');
+      else add('creative_required', 'Ads have headline, primary text and description', 'pass', '');
+    }
+
+    if (!ads.length) add('creative_limits', 'Creative text is inside the character limits', 'fail', 'No ads yet.');
+    else {
+      var hard = [], over = [];
+      ads.forEach(function (a) {
+        ['headline', 'primary_text', 'description'].forEach(function (f) {
+          var len = String(a[f] == null ? '' : a[f]).length;
+          var lim = LIMITS[f];
+          if (len > lim.hard) hard.push('"' + nameOf(a) + '" ' + lim.label + ' is ' + len + ' characters (hard limit ' + lim.hard + ')');
+          else if (len > lim.rec) over.push('"' + nameOf(a) + '" ' + lim.label + ' is ' + len + ' characters (recommended ' + lim.rec + ')');
+        });
+      });
+      if (hard.length) add('creative_limits', 'Creative text is inside the character limits', 'fail', hard.join(' · ') + ' — shorten it; export stays locked until the red items are fixed.');
+      else if (over.length) add('creative_limits', 'Creative text is inside the character limits', 'warn', over.join(' · ') + ' — allowed, but Meta will trim it.');
+      else add('creative_limits', 'Creative text is inside the character limits', 'pass', '');
+    }
+
+    /* ---- tracking parameters: the missing-utm_campaign trap ---- */
+    if (!ads.length) add('url_core', 'Tracking links carry utm_source and utm_campaign', 'fail', 'No ads yet.');
+    else {
+      var core = [];
+      ads.forEach(function (a) {
+        var p = parseParams(a.url_parameters);
+        if (!anyText(p.utm_source)) core.push('"' + nameOf(a) + '" is missing utm_source');
+        if (!anyText(p.utm_campaign)) core.push('"' + nameOf(a) + '" is missing utm_campaign — this is the one people forget (use {{campaign.name}})');
+      });
+      if (core.length) add('url_core', 'Tracking links carry utm_source and utm_campaign', 'fail', core.join(' · '));
+      else add('url_core', 'Tracking links carry utm_source and utm_campaign', 'pass', '');
+    }
+
+    if (!ads.length) add('url_extra', 'Tracking links carry utm_medium and utm_content', 'fail', 'No ads yet.');
+    else {
+      var extra = [];
+      ads.forEach(function (a) {
+        var p = parseParams(a.url_parameters);
+        var m = [];
+        if (!anyText(p.utm_medium)) m.push('utm_medium');
+        if (!anyText(p.utm_content)) m.push('utm_content');
+        if (m.length) extra.push('"' + nameOf(a) + '" is missing ' + m.join(' and '));
+      });
+      if (extra.length) add('url_extra', 'Tracking links carry utm_medium and utm_content', 'warn', extra.join(' · '));
+      else add('url_extra', 'Tracking links carry utm_medium and utm_content', 'pass', '');
+    }
+
+    if (!ads.length) add('url_token', 'utm_campaign uses the {{campaign.name}} token so it survives renames', 'warn', 'No ads yet.');
+    else {
+      var withCamp = ads.filter(function (a) { return anyText(parseParams(a.url_parameters).utm_campaign); });
+      if (!withCamp.length) add('url_token', 'utm_campaign uses the {{campaign.name}} token so it survives renames', 'warn', 'Add utm_campaign={{campaign.name}} when you write the link.');
+      else {
+        var hardTok = withCamp.filter(function (a) { return parseParams(a.url_parameters).utm_campaign.indexOf('{{campaign.name}}') < 0; });
+        if (hardTok.length) add('url_token', 'utm_campaign uses the {{campaign.name}} token so it survives renames', 'warn', names(hardTok) + ' hard-codes utm_campaign — use the dynamic {{campaign.name}} token.');
+        else add('url_token', 'utm_campaign uses the {{campaign.name}} token so it survives renames', 'pass', '');
+      }
+    }
+
+    /* ---- placements (not required for T3 — it has its own rule) ---- */
+    if (taskId !== 'T3') {
+      if (!ss.length) add('placements_basic', 'Placements are chosen', 'fail', 'No ad sets yet.');
+      else {
+        var noPl = ss.filter(function (s) {
+          var p = s.placements || {};
+          return !(Array.isArray(p.platforms) && p.platforms.length) && p.advantage_placements !== true;
+        });
+        if (noPl.length) add('placements_basic', 'Placements are chosen', 'warn', names(noPl) + ' — pick at least one platform or turn Advantage+ placements on.');
+        else add('placements_basic', 'Placements are chosen', 'pass', '');
+      }
+    }
+
+    /* ---- task-specific checks ---- */
+    if (taskId === 'T1') {
+      add('t1_adsets', 'Two ad sets: one broad, one retargeting', ss.length >= cfg.minAdsets ? 'pass' : 'fail',
+        ss.length >= cfg.minAdsets ? '' : 'Build two ad sets — a broad prospecting set and a retargeting set that excludes the people who already bought. You have ' + ss.length + '.');
+      if (!ss.length) add('t1_attribution', 'Attribution is 7-day click / 1-day view', 'fail', 'No ad sets yet.');
+      else {
+        var badAt = ss.filter(function (s) { return s.attribution_setting !== cfg.attribution; });
+        if (badAt.length) add('t1_attribution', 'Attribution is 7-day click / 1-day view', 'fail', names(badAt) + ' — set the attribution to “7-day click, 1-day view”.');
+        else add('t1_attribution', 'Attribution is 7-day click / 1-day view', 'pass', '');
+      }
+      if (!ss.length) add('t1_goal', 'Optimisation goal is Lead', 'fail', 'No ad sets yet.');
+      else {
+        var badG = ss.filter(function (s) { return s.optimization_goal !== cfg.goal; });
+        if (badG.length) add('t1_goal', 'Optimisation goal is Lead', 'fail', names(badG) + ' — the human closes on WhatsApp/call, so optimise for the Lead.');
+        else add('t1_goal', 'Optimisation goal is Lead', 'pass', '');
+      }
+      if (!ss.length) add('t1_event', 'Conversion event is Lead', 'fail', 'No ad sets yet.');
+      else {
+        var badE = ss.filter(function (s) { return s.conversion_event !== cfg.conversion; });
+        if (badE.length) add('t1_event', 'Conversion event is Lead', 'fail', names(badE) + ' — the conversion event must be Lead.');
+        else add('t1_event', 'Conversion event is Lead', 'pass', '');
+      }
+      add('t1_ads', 'Three ads, one per angle', ads.length >= cfg.minAds ? 'pass' : 'fail',
+        ads.length >= cfg.minAds ? '' : 'Build three ads with different angles (e.g. price, outcome, social proof). You have ' + ads.length + '.');
+      if (!ads.length) add('t1_cta', 'Every ad uses a WhatsApp or call button', 'fail', 'No ads yet.');
+      else {
+        var badCta = ads.filter(function (a) { return cfg.ctas.indexOf(a.cta) < 0; });
+        if (badCta.length) add('t1_cta', 'Every ad uses a WhatsApp or call button', 'fail', names(badCta) + ' — the buyer must be able to message or call. Use “WhatsApp message” or “Call now”.');
+        else add('t1_cta', 'Every ad uses a WhatsApp or call button', 'pass', '');
+      }
+      if (!ads.length) add('t1_utm_values', 'utm_source=facebook and utm_medium=paid_social on every ad', 'fail', 'No ads yet.');
+      else {
+        var badUtm = [];
+        ads.forEach(function (a) {
+          var p = parseParams(a.url_parameters);
+          var m = [];
+          if (p.utm_source !== 'facebook') m.push('utm_source must be facebook');
+          if (p.utm_medium !== 'paid_social') m.push('utm_medium must be paid_social');
+          if (!anyText(p.utm_content)) m.push('utm_content missing');
+          if (m.length) badUtm.push('"' + nameOf(a) + '": ' + m.join(', '));
+        });
+        if (badUtm.length) add('t1_utm_values', 'utm_source=facebook and utm_medium=paid_social on every ad', 'fail', badUtm.join(' · '));
+        else add('t1_utm_values', 'utm_source=facebook and utm_medium=paid_social on every ad', 'pass', '');
+      }
+    }
+
+    if (taskId === 'T2') {
+      if (!ss.length) add('t2_broad', 'Audience is broad: Advantage+ audience ON, wide age range', 'fail', 'No ad sets yet.');
+      else {
+        var badB = ss.filter(function (s) {
+          var t = s.targeting || {};
+          var lo = num(t.age_min), hi = num(t.age_max);
+          return !(t.advantage_audience === true && lo != null && lo <= 21 && hi != null && hi >= 50);
+        });
+        if (badB.length) add('t2_broad', 'Audience is broad: Advantage+ audience ON, wide age range', 'fail', names(badB) + ' — turn Advantage+ audience ON and widen the age range (18+). The ₹100 pass is an impulse buy, not a niche.');
+        else add('t2_broad', 'Audience is broad: Advantage+ audience ON, wide age range', 'pass', '');
+      }
+      if (!ss.length) add('t2_goal', 'Optimisation goal is Conversions', 'fail', 'No ad sets yet.');
+      else {
+        var badG2 = ss.filter(function (s) { return s.optimization_goal !== cfg.goal; });
+        if (badG2.length) add('t2_goal', 'Optimisation goal is Conversions', 'fail', names(badG2) + ' — the pass is bought in the app, so optimise for Conversions.');
+        else add('t2_goal', 'Optimisation goal is Conversions', 'pass', '');
+      }
+      if (!ss.length) add('t2_event', 'Conversion event is Purchase', 'fail', 'No ad sets yet.');
+      else {
+        var badE2 = ss.filter(function (s) { return s.conversion_event !== cfg.conversion; });
+        if (badE2.length) add('t2_event', 'Conversion event is Purchase', 'fail', names(badE2) + ' — the event must be Purchase.');
+        else add('t2_event', 'Conversion event is Purchase', 'pass', '');
+      }
+      if (!ads.length) add('t2_cta', 'App-friendly button (install / use app / download / shop now)', 'fail', 'No ads yet.');
+      else {
+        var badCta2 = ads.filter(function (a) { return cfg.ctas.indexOf(a.cta) < 0; });
+        if (badCta2.length) add('t2_cta', 'App-friendly button (install / use app / download / shop now)', 'fail', names(badCta2) + ' — use a button that sends people into the app.');
+        else add('t2_cta', 'App-friendly button (install / use app / download / shop now)', 'pass', '');
+      }
+      if (!ads.length) add('t2_price', 'Creative says ₹100 clearly', 'fail', 'No ads yet.');
+      else {
+        var mentions = ads.some(function (a) {
+          return (String(a.primary_text || '') + ' ' + String(a.headline || '') + ' ' + String(a.description || '')).indexOf('100') >= 0;
+        });
+        if (!mentions) add('t2_price', 'Creative says ₹100 clearly', 'fail', 'Say ₹100 in the primary text or headline — the price is the offer.');
+        else add('t2_price', 'Creative says ₹100 clearly', 'pass', '');
+      }
+    }
+
+    if (taskId === 'T3') {
+      var radius = B[cfg.radiusKey];
+      if (!ss.length) add('t3_geo', 'Geo is Noida within ' + radius + ' km', 'fail', 'No ad sets yet.');
+      else {
+        var badGeo = ss.filter(function (s) {
+          var geo = (s.targeting || {}).geo;
+          if (!Array.isArray(geo)) return true;
+          return !geo.some(function (g) {
+            var gs = String(g);
+            return /noida/i.test(gs) && gs.indexOf(String(radius)) >= 0 && /km/i.test(gs);
+          });
+        });
+        if (badGeo.length) add('t3_geo', 'Geo is Noida within ' + radius + ' km', 'fail', 'Add a geo entry like "Noida (+' + radius + ' km)" — the brief says Noida within ' + radius + ' km.');
+        else add('t3_geo', 'Geo is Noida within ' + radius + ' km', 'pass', '');
+      }
+      if (!ss.length) add('t3_goal', 'Optimisation goal is Lead', 'fail', 'No ad sets yet.');
+      else {
+        var badG3 = ss.filter(function (s) { return s.optimization_goal !== cfg.goal; });
+        if (badG3.length) add('t3_goal', 'Optimisation goal is Lead', 'fail', names(badG3) + ' — walk-ins start with a lead, so optimise for the Lead.');
+        else add('t3_goal', 'Optimisation goal is Lead', 'pass', '');
+      }
+      if (!ss.length) add('t3_event', 'Lead-form conversion event is Lead', 'fail', 'No ad sets yet.');
+      else {
+        var badE3 = ss.filter(function (s) { return s.conversion_event !== cfg.conversion; });
+        if (badE3.length) add('t3_event', 'Lead-form conversion event is Lead', 'fail', names(badE3) + ' — the instant form counts as Lead.');
+        else add('t3_event', 'Lead-form conversion event is Lead', 'pass', '');
+      }
+      if (!ss.length) add('t3_placements', 'Advantage+ placements OFF and Audience Network excluded', 'fail', 'No ad sets yet.');
+      else {
+        var badPl = ss.filter(function (s) {
+          var p = s.placements || {};
+          var plats = Array.isArray(p.platforms) ? p.platforms : [];
+          return !(p.advantage_placements === false && !plats.some(function (x) { return /audience network/i.test(String(x)); }));
+        });
+        if (badPl.length) add('t3_placements', 'Advantage+ placements OFF and Audience Network excluded', 'fail', names(badPl) + ' — turn Advantage+ placements OFF and remove Audience Network.');
+        else add('t3_placements', 'Advantage+ placements OFF and Audience Network excluded', 'pass', '');
+      }
+      if (!ss.length) add('t3_placement_choice', 'You picked the placements (feeds / stories / reels)', 'fail', 'No ad sets yet.');
+      else {
+        var noPick = ss.filter(function (s) {
+          var plats = ((s.placements || {}).platforms) || [];
+          return !plats.length;
+        });
+        if (noPick.length) add('t3_placement_choice', 'You picked the placements (feeds / stories / reels)', 'warn', names(noPick) + ' — with Advantage+ OFF you choose: tick Facebook and/or Instagram.');
+        else add('t3_placement_choice', 'You picked the placements (feeds / stories / reels)', 'pass', '');
+      }
+    }
+
+    return items;
+  }
+
+  function allChecks() {
+    var out = [];
+    ['T1', 'T2', 'T3'].forEach(function (t) { out = out.concat(runChecks(t)); });
+    return out;
+  }
+
+  function counts(items) {
+    var c = { passed: 0, warned: 0, failed: 0, total: items.length };
+    items.forEach(function (i) {
+      if (i.status === 'pass') c.passed++;
+      else if (i.status === 'warn') c.warned++;
+      else c.failed++;
+    });
+    return c;
+  }
+
+  /* hard-limit violations block export */
+  function hardLimitViolations() {
+    var out = [];
+    ents('ads').forEach(function (a) {
+      ['headline', 'primary_text', 'description'].forEach(function (f) {
+        var len = String(a[f] == null ? '' : a[f]).length;
+        if (len > LIMITS[f].hard) out.push({ ad: nameOf(a), field: f, len: len, hard: LIMITS[f].hard });
+      });
+    });
+    return out;
+  }
+
+  /* ================================================================== *
+   * header / flash / tabs
+   * ================================================================== */
+  var flashTimer = null;
+  function flash(kind, text, details) {
+    var host = $('#flash');
+    clearNode(host);
+    host.hidden = false;
+    host.className = kind;
+    host.appendChild(el('div', { text: text }));
+    if (details && details.length) host.appendChild(el('ul', {}, details.map(function (d) { return el('li', { text: d }); })));
+    if (flashTimer) { clearTimeout(flashTimer); flashTimer = null; }
+    if (kind === 'ok') flashTimer = setTimeout(function () { host.hidden = true; }, 6000);
+  }
+
+  var activeTab = 'T1';
+
+  function renderTabs() {
+    var host = $('#tabs');
+    clearNode(host);
+    ['T1', 'T2', 'T3'].forEach(function (id) {
+      host.appendChild(el('button', {
+        type: 'button',
+        'data-tab': id,
+        class: id === activeTab ? 'active' : '',
+        text: TASKS[id].label,
+        onclick: function () { goTab(id); }
+      }));
+    });
+    host.appendChild(el('span', { class: 'tabs-note', text: 'Three builds · each has its own checks on the right' }));
+  }
+
+  function goTab(id) {
+    if (location.hash === '#' + id.toLowerCase()) setTab(id);
+    else location.hash = '#' + id.toLowerCase();
+  }
+  function setTab(id) {
+    if (!TASKS[id]) id = 'T1';
+    activeTab = id;
+    renderTabs();
+    renderMain();
+  }
+  function handleHash() {
+    var h = (location.hash || '').replace(/^#/, '').toUpperCase();
+    setTab(TASKS[h] ? h : activeTab);
+  }
+
+  function renderSaveState() {
+    var host = $('#save-state');
+    if (!host) return;
+    if (!storageOk) { host.textContent = 'Autosave is blocked by this browser — use Export my work to keep a copy.'; return; }
+    host.textContent = state.saved_at ? ('saved ' + state.saved_at.slice(11, 19)) : 'not saved yet';
+  }
+
+  /* ================================================================== *
+   * render: brief + work surface + checks
+   * ================================================================== */
+  function renderAll() {
+    renderTabs();
+    renderMain();
+    renderLog();
+    renderSaveState();
+    updateExportButton();
+  }
+
+  function renderBrief(taskId) {
+    var cfg = TASKS[taskId].cfg;
+    var f = document.createDocumentFragment();
+    f.appendChild(el('h2', { text: 'Your brief — ' + TASKS[taskId].label }));
+    var ul = el('ul');
+    if (taskId === 'T1') {
+      ul.appendChild(el('li', {}, el('b', { text: 'Objective: Leads. ' }), 'The ₹24,000 pass is sold online but a person closes the sale on WhatsApp or a call — collect leads, not purchases.'));
+      ul.appendChild(el('li', {}, '1 campaign · campaign-level daily budget ', el('b', { class: 'num', text: fmtRs(B.t1Budget) }), ' (one budget for all ad sets) · auction buying.'));
+      ul.appendChild(el('li', {}, '2 ad sets: a broad prospecting set and a retargeting set that excludes the people who already bought.'));
+      ul.appendChild(el('li', {}, '3 ads, each with a different angle and a WhatsApp or call button.'));
+      ul.appendChild(el('li', {}, 'Tracking on every ad: ', el('span', { class: 'mono', text: 'utm_source=facebook&utm_medium=paid_social&utm_content=…&utm_campaign={{campaign.name}}' }), '.'));
+    } else if (taskId === 'T2') {
+      ul.appendChild(el('li', {}, el('b', { text: 'Objective: Sales. ' }), 'The ₹100 daily pass is bought inside the app — keep it an impulse decision.'));
+      ul.appendChild(el('li', {}, '1 campaign · daily budget ', el('b', { class: 'num', text: fmtRs(B.t2Budget) }), ' at campaign level.'));
+      ul.appendChild(el('li', {}, '1 ad set with a broad audience: Advantage+ audience ON, wide age range (18+).'));
+      ul.appendChild(el('li', {}, 'Creative that says ₹100 clearly, with an app-friendly button.'));
+      ul.appendChild(el('li', {}, 'Conversion event: Purchase. Tracking: utm_source and utm_campaign on every ad.'));
+    } else {
+      ul.appendChild(el('li', {}, el('b', { text: 'Objective: Leads. ' }), 'Use Meta\'s instant lead form (conversion event Lead).'));
+      ul.appendChild(el('li', {}, '1 campaign · daily budget ', el('b', { class: 'num', text: fmtRs(B.t3Budget) }), ' at campaign level.'));
+      ul.appendChild(el('li', {}, '1 ad set targeting Noida within ', el('b', { class: 'num', text: B.t3RadiusKm + ' km' }), ', adults 18–65, excluding current members.'));
+      ul.appendChild(el('li', {}, 'Placements: turn Advantage+ placements OFF and leave Audience Network out — pick the placements yourself (feeds, stories, reels).'));
+      ul.appendChild(el('li', {}, 'Tracking: utm_source and utm_campaign on every ad.'));
+    }
+    f.appendChild(ul);
+    f.appendChild(el('div', { class: 'derived-note' },
+      'The numbers above come from your candidate code — they are different for every candidate. All checks on the right update as you work.'));
+    var card = el('div', { class: 'card brief' }, f);
+    return card;
+  }
+
+  function renderMain() {
+    var main = $('#main');
+    clearNode(main);
+    main.appendChild(renderBrief(activeTab));
+    var es = entitiesFor(activeTab);
+
+    var work = el('div', { class: 'col-work' });
+
+    /* campaigns */
+    work.appendChild(el('div', { class: 'card' },
+      el('div', { class: 'card-head' },
+        el('h2', { text: 'Campaigns' }),
+        el('span', { class: 'muted', text: es.campaigns.length ? es.campaigns.length + ' built' : 'none yet' }),
+        el('span', { style: 'flex:1' }),
+        el('button', { class: 'btn primary', type: 'button', text: 'New campaign', onclick: function () { openDrawer('campaign', null); } })
+      ),
+      makeTable([
+        { label: 'Name', get: function (r) { return nameCell(r); } },
+        { label: 'Objective', get: function (r) { return cellText(r.objective); } },
+        { label: 'Budget', get: function (r) { return cellText(budgetLabel(r)); } },
+        { label: 'Bid strategy', get: function (r) { return cellText(r.bid_strategy); } },
+        { label: 'Daily budget', get: function (r) { return cellText(fmtRs(r.daily_budget)); } },
+        { label: 'Status', get: function (r) { return statusBadge(r.status); } }
+      ], es.campaigns, function (r) { openDrawer('campaign', r); },
+        { title: 'No campaigns yet', hint: 'Click “New campaign” and build the first one for this task.' })
+    ));
+
+    /* ad sets */
+    work.appendChild(el('div', { class: 'card' },
+      el('div', { class: 'card-head' },
+        el('h2', { text: 'Ad sets' }),
+        el('span', { class: 'muted', text: es.adsets.length ? es.adsets.length + ' built' : 'none yet' }),
+        el('span', { style: 'flex:1' }),
+        el('button', { class: 'btn primary', type: 'button', text: 'New ad set', onclick: function () { openDrawer('adset', null); } })
+      ),
+      makeTable([
+        { label: 'Name', get: function (r) { return nameCell(r); } },
+        { label: 'Optimisation goal', get: function (r) { return cellText(r.optimization_goal); } },
+        { label: 'Attribution', get: function (r) { return cellText(r.attribution_setting); } },
+        { label: 'Conversion event', get: function (r) { return cellText(r.conversion_event); } },
+        { label: 'Targeting', get: function (r) { return cellText(targetingSummary(r)); } },
+        { label: 'Placements', get: function (r) { return cellText(placementsSummary(r)); } },
+        { label: 'Daily budget', get: function (r) { return cellText(fmtRs(r.daily_budget)); } },
+        { label: 'Status', get: function (r) { return statusBadge(r.status); } }
+      ], es.adsets, function (r) { openDrawer('adset', r); },
+        { title: 'No ad sets yet', hint: 'Click “New ad set” — every ad set belongs to a campaign.' })
+    ));
+
+    /* ads */
+    work.appendChild(el('div', { class: 'card' },
+      el('div', { class: 'card-head' },
+        el('h2', { text: 'Ads' }),
+        el('span', { class: 'muted', text: es.ads.length ? es.ads.length + ' built' : 'none yet' }),
+        el('span', { style: 'flex:1' }),
+        el('button', { class: 'btn primary', type: 'button', text: 'New ad', onclick: function () { openDrawer('ad', null); } })
+      ),
+      makeTable([
+        { label: 'Name', get: function (r) { return nameCell(r); } },
+        { label: 'Format', get: function (r) { return cellText(r.format); } },
+        { label: 'Headline', get: function (r) { return copyCell(r.headline, 'headline'); } },
+        { label: 'Primary text', get: function (r) { return copyCell(r.primary_text, 'primary_text'); } },
+        { label: 'Description', get: function (r) { return copyCell(r.description, 'description'); } },
+        { label: 'Button', get: function (r) { return cellText(r.cta); } },
+        { label: 'Link', get: function (r) { return cellText(r.destination_url, 40); } },
+        { label: 'Tracking', get: function (r) { return cellText(r.url_parameters, 60); } },
+        { label: 'Status', get: function (r) { return statusBadge(r.status); } }
+      ], es.ads, function (r) { openDrawer('ad', r); },
+        { title: 'No ads yet', hint: 'Click “New ad” — every ad belongs to an ad set.' })
+    ));
+
+    main.appendChild(el('div', { class: 'cols' }, work, renderChecksPanel(activeTab)));
+  }
+
+  function budgetLabel(r) {
+    if (r.budget_optimization === 'campaign') return 'Campaign level (CBO)';
+    if (r.budget_optimization === 'ad_set') return 'Ad set level';
+    return '—';
+  }
+
+  function targetingSummary(r) {
+    var t = r.targeting || {};
+    var geo = Array.isArray(t.geo) ? t.geo.length : 0;
+    var ex = Array.isArray(t.excluded_custom_audiences) ? t.excluded_custom_audiences.length : 0;
+    var lo = num(t.age_min), hi = num(t.age_max);
+    var age = (lo == null && hi == null) ? 'age —' : 'age ' + (lo == null ? '—' : lo) + '–' + (hi == null ? '—' : hi);
+    return 'geo ' + geo + ' · ' + age + ' · excluded ' + ex;
+  }
+  function placementsSummary(r) {
+    var p = r.placements || {};
+    var plats = Array.isArray(p.platforms) ? p.platforms.map(String) : [];
+    var adv = p.advantage_placements === true ? 'Advantage+ on'
+            : p.advantage_placements === false ? 'Advantage+ off' : 'Advantage+ —';
+    return (plats.length ? plats.join(', ') : 'none') + ' · ' + adv;
+  }
+
+  function statusBadge(v) {
+    if (v == null || v === '') return el('span', { class: 'muted', text: '—' });
+    var cls = v === 'Active' ? 'badge green' : v === 'Paused' ? 'badge' : 'badge';
+    return el('span', { class: cls, text: String(v) });
+  }
+
+  function cellText(v, max) {
+    var t = disp(v);
+    if (max && t.length > max) return el('span', { class: 'ellip', title: t, text: t });
+    return document.createTextNode(t);
+  }
+
+  function copyCell(v, field) {
+    var s = v == null ? '' : String(v);
+    var lim = LIMITS[field];
+    if (lim && s.length > lim.hard) {
+      return el('span', {}, el('span', { class: 'ellip', title: s, text: s }), el('span', { class: 'badge red', text: 'over ' + lim.hard }));
+    }
+    if (lim && s.length > lim.rec) {
+      return el('span', {}, el('span', { class: 'ellip', title: s, text: s }), el('span', { class: 'badge amber', text: 'over ' + lim.rec + ' rec' }));
+    }
+    return el('span', { class: 'ellip', title: s, text: s || '—' });
+  }
+
+  function nameCell(r) {
+    var parts = [];
+    parts.push(el('div', {}, anyText(r.name) ? String(r.name) : el('span', { class: 'muted', text: '(unnamed)' })));
+    parts.push(el('div', { class: 'muted small mono', text: r.id != null ? String(r.id) : '' }));
+    return el('div', {}, parts);
+  }
+
+  function emptyState(title, hint) {
+    return el('div', { class: 'empty' }, el('b', { text: title }), el('span', { text: hint }));
+  }
+
+  function makeTable(cols, rows, onRow, emptyHint) {
+    var wrap = el('div', { class: 'tbl-wrap' });
+    var t = el('table');
+    var thead = el('thead');
+    var htr = el('tr');
+    cols.forEach(function (c) { htr.appendChild(el('th', { text: c.label })); });
+    thead.appendChild(htr);
+    t.appendChild(thead);
+    var tb = el('tbody');
+    rows.forEach(function (r) {
+      var tr = el('tr');
+      if (onRow) {
+        tr.className = 'clickable';
+        tr.addEventListener('click', function (ev) {
+          if (ev.target.closest && ev.target.closest('button,a')) return;
+          onRow(r);
+        });
+      }
+      cols.forEach(function (c) {
+        var td = el('td');
+        var v = c.get(r);
+        if (v == null) td.textContent = '—';
+        else if (typeof v === 'string') td.textContent = v;
+        else td.appendChild(v);
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    if (!rows.length && emptyHint) {
+      tb.appendChild(el('tr', {}, el('td', { colspan: String(cols.length) }, emptyState(emptyHint.title, emptyHint.hint))));
+    }
+    t.appendChild(tb);
+    wrap.appendChild(t);
+    return wrap;
+  }
+
+  function renderChecksPanel(taskId) {
+    var items = runChecks(taskId);
+    var c = counts(items);
+    var card = el('div', { class: 'card' });
+    card.appendChild(el('h2', { text: 'Checks for this tab' }));
+    card.appendChild(el('div', { class: 'checks-summary' },
+      el('span', { class: 'sum', text: c.passed + ' of ' + c.total + ' passing' }),
+      el('span', { class: 'badge green', text: c.passed + ' pass' }),
+      el('span', { class: 'badge amber', text: c.warned + ' warn' }),
+      el('span', { class: 'badge red', text: c.failed + ' fail' })
+    ));
+
+    var hard = hardLimitViolations();
+    if (hard.length) {
+      card.appendChild(el('div', { id: 'export-lock' },
+        'Export is locked: fix the red hard-limit items below first (' +
+        hard.map(function (h) { return '“' + h.ad + '” ' + h.field + ' is ' + h.len + '/' + h.hard; }).join(', ') + ').'));
+    }
+
+    var list = el('div');
+    items.forEach(function (i) {
+      list.appendChild(el('div', { class: 'chk ' + i.status },
+        el('span', { class: 'chip ' + i.status, text: i.status === 'pass' ? 'pass' : i.status === 'warn' ? 'warn' : 'fail' }),
+        el('div', {},
+          el('div', { class: 'cl', text: i.label }),
+          i.detail ? el('div', { class: 'cd', text: i.detail }) : null
+        )
+      ));
+    });
+    card.appendChild(list);
+    return el('div', { class: 'col-checks' }, card);
+  }
+
+  /* ================================================================== *
+   * drawer (create / edit)
+   * ================================================================== */
+  var drawer = { open: false, entity: null, id: null, mode: null, draft: null, els: {}, row: null };
+  var ENTITY_INFO = {
+    campaign: { label: 'campaign', prefix: 'cmp', title: 'Campaign' },
+    adset: { label: 'ad set', prefix: 'as', title: 'Ad set' },
+    ad: { label: 'ad', prefix: 'ad', title: 'Ad' }
+  };
+
+  var SCHEMAS = {
+    campaign: [
+      { path: 'name', label: 'Name', kind: 'text', placeholder: 'e.g. All-access pass — leads' },
+      { path: 'objective', label: 'Objective', kind: 'select', options: V.objective },
+      { path: 'buying_type', label: 'Buying type', kind: 'select', options: V.buying_type },
+      { path: 'budget_optimization', label: 'Budget level', kind: 'select', options: V.budget_optimization },
+      { path: 'daily_budget', label: 'Daily budget (₹)', kind: 'number', hint: 'The brief gives the exact number for this tab. Use campaign level, then leave ad-set budgets empty.' },
+      { path: 'bid_strategy', label: 'Bid strategy', kind: 'select', options: V.bid_strategy },
+      { path: 'cost_per_result_goal', label: 'Cost per result goal (₹)', kind: 'number', hint: 'Only used with the “Cost per result goal” strategy — must be above 0.' },
+      { path: 'status', label: 'Status', kind: 'select', options: V.status }
+    ],
+    adset: [
+      { path: 'campaign_id', label: 'Campaign', kind: 'parent', parents: 'campaigns' },
+      { path: 'name', label: 'Name', kind: 'text', placeholder: 'e.g. Broad prospecting' },
+      { path: 'optimization_goal', label: 'Optimisation goal', kind: 'select', options: V.optimization_goal },
+      { path: 'billing_event', label: 'Billing event', kind: 'select', options: V.billing_event },
+      { path: 'daily_budget', label: 'Daily budget (₹)', kind: 'number', hint: 'Leave empty when the campaign carries the budget — putting it in both places is the classic mistake.' },
+      { path: 'attribution_setting', label: 'Attribution setting', kind: 'select', options: V.attribution_setting },
+      { path: 'conversion_event', label: 'Conversion event', kind: 'select', options: V.conversion_event },
+      { path: 'status', label: 'Status', kind: 'select', options: V.status },
+      { path: 'targeting.geo', label: 'Places to target', kind: 'chips', group: 'Targeting', placeholder: 'e.g. Noida (+6 km)', hint: 'Type a place and press Enter to add it.' },
+      { path: 'targeting.age_min', label: 'Youngest age', kind: 'number', group: 'Targeting' },
+      { path: 'targeting.age_max', label: 'Oldest age', kind: 'number', group: 'Targeting' },
+      { path: 'targeting.genders', label: 'Genders', kind: 'chips', group: 'Targeting', placeholder: 'male / female — leave empty for all' },
+      { path: 'targeting.interests', label: 'Interests', kind: 'chips', group: 'Targeting', placeholder: 'e.g. Weight loss' },
+      { path: 'targeting.excluded_custom_audiences', label: 'Excluded audiences (people you do NOT want to reach)', kind: 'chips', group: 'Targeting', placeholder: 'e.g. Current members / past buyers' },
+      { path: 'targeting.advantage_audience', label: 'Advantage+ audience (let Meta find more people like your buyers)', kind: 'checkbox', group: 'Targeting' },
+      { path: 'placements.platforms', label: 'Where the ad can appear', kind: 'checks', group: 'Placements', options: V.platform },
+      { path: 'placements.advantage_placements', label: 'Advantage+ placements (Meta chooses everywhere automatically)', kind: 'checkbox', group: 'Placements' }
+    ],
+    ad: [
+      { path: 'adset_id', label: 'Ad set', kind: 'parent', parents: 'adsets' },
+      { path: 'name', label: 'Name', kind: 'text', placeholder: 'e.g. Angle — price' },
+      { path: 'format', label: 'Format', kind: 'select', options: V.format },
+      { path: 'headline', label: 'Headline', kind: 'text', counter: LIMITS.headline },
+      { path: 'primary_text', label: 'Primary text', kind: 'textarea', counter: LIMITS.primary_text },
+      { path: 'description', label: 'Description', kind: 'text', counter: LIMITS.description },
+      { path: 'cta', label: 'Button', kind: 'select', options: V.cta },
+      { path: 'destination_url', label: 'Link', kind: 'text', placeholder: 'Paste the page the ad opens' },
+      { path: 'url_parameters', label: 'Tracking parameters', kind: 'text', placeholder: 'utm_source=facebook&utm_medium=paid_social&utm_content=angle1&utm_campaign={{campaign.name}}', hint: 'utm_source and utm_campaign are the two that must be there.' },
+      { path: 'status', label: 'Status', kind: 'select', options: V.status }
+    ]
+  };
+
+  function openDrawer(entity, row) {
+    drawer = { open: true, entity: entity, id: row ? row.id : null, mode: row ? 'edit' : 'create', draft: {}, els: {}, row: row || null };
+    var draft = {};
+    SCHEMAS[entity].forEach(function (spec) {
+      var v = row ? dget(row, spec.path) : undefined;
+      if (spec.kind === 'checkbox') dset(draft, spec.path, v === true);
+      else if (spec.kind === 'chips' || spec.kind === 'checks') dset(draft, spec.path, Array.isArray(v) ? v.slice() : []);
+      else if (spec.kind === 'number') dset(draft, spec.path, (v == null || v === '') ? '' : String(v));
+      else dset(draft, spec.path, v == null ? '' : String(v));
+    });
+    drawer.draft = draft;
+    buildDrawer();
+  }
+
+  function closeDrawer() {
+    drawer.open = false;
+    var d = $('#drawer'); clearNode(d); d.hidden = true;
+    $('#drawer-backdrop').hidden = true;
+  }
+
+  function parentOptions(kind) {
+    return entitiesFor(activeTab)[kind].map(function (r) {
+      return { value: r.id, label: nameOf(r) + ' · ' + r.id };
+    });
+  }
+
+  function buildDrawer() {
+    var d = $('#drawer');
+    clearNode(d);
+    var entity = drawer.entity;
+    var info = ENTITY_INFO[entity];
+
+    d.appendChild(el('div', { class: 'drawer-head' },
+      el('h2', { text: (drawer.mode === 'edit' ? 'Edit ' : 'New ') + info.label }),
+      el('span', { class: 'muted mono small', id: 'drawer-id', text: drawer.id != null ? String(drawer.id) : '' }),
+      el('span', { class: 'spacer' }),
+      el('button', { class: 'icon-btn', type: 'button', text: '✕', title: 'Close', onclick: closeDrawer })
+    ));
+
+    var body = el('div', { class: 'drawer-body' });
+    body.appendChild(el('div', { id: 'drawer-top-errors' }));
+
+    var groups = {};
+    SCHEMAS[entity].forEach(function (spec) {
+      var node = buildField(spec);
+      if (spec.group) {
+        if (!groups[spec.group]) {
+          var fs = el('fieldset', { class: 'fieldset' }, el('legend', { text: spec.group }));
+          groups[spec.group] = fs;
+          body.appendChild(fs);
+        }
+        groups[spec.group].appendChild(node);
+      } else {
+        body.appendChild(node);
+      }
+    });
+    d.appendChild(body);
+
+    var foot = el('div', { class: 'drawer-foot' });
+    foot.appendChild(el('button', { class: 'btn primary', type: 'button', text: 'Save', onclick: saveDrawer }));
+    foot.appendChild(el('span', { class: 'spacer' }));
+    if (drawer.mode === 'edit') foot.appendChild(deleteButton());
+    foot.appendChild(el('button', { class: 'btn', type: 'button', text: 'Close', onclick: closeDrawer }));
+    d.appendChild(foot);
+
+    $('#drawer-backdrop').hidden = false;
+    d.hidden = false;
+  }
+
+  function buildField(spec) {
+    var value = dget(drawer.draft, spec.path);
+    var msg = el('div', { class: 'field-msg' });
+    var node;
+
+    if (spec.kind === 'checkbox') {
+      var cb = el('input', { type: 'checkbox' });
+      cb.checked = value === true;
+      cb.addEventListener('change', function () { dset(drawer.draft, spec.path, cb.checked); });
+      node = el('div', { class: 'field check-field' },
+        el('label', { class: 'check' }, cb, el('span', { text: spec.label })), msg);
+      drawer.els[spec.path] = { input: cb, msg: msg };
+
+    } else if (spec.kind === 'chips') {
+      var built = buildChips(spec, Array.isArray(value) ? value : []);
+      node = built.node;
+      drawer.els[spec.path] = { input: built.input, msg: built.msg, flush: built.flush };
+
+    } else if (spec.kind === 'checks') {
+      var chk = buildChecks(spec, Array.isArray(value) ? value : []);
+      node = chk.node;
+      drawer.els[spec.path] = { msg: chk.msg };
+
+    } else if (spec.kind === 'select' || spec.kind === 'parent') {
+      var opts;
+      if (spec.kind === 'parent') {
+        opts = parentOptions(spec.parents);
+        var cur0 = value == null ? '' : String(value);
+        if (!opts.length) opts = [{ value: '', label: '(nothing to choose yet)' }];
+        else if (!cur0 || !opts.some(function (o) { return o.value === cur0; })) opts = [{ value: '', label: 'Choose…' }].concat(opts);
+        if (cur0 && !opts.some(function (o) { return o.value === cur0; })) opts.push({ value: cur0, label: '(missing) ' + cur0 });
+      } else {
+        opts = (spec.options || []).map(function (o) {
+          return Array.isArray(o) ? { value: o[0], label: o[1] } : { value: o, label: o };
+        });
+      }
+      var sel = el('select');
+      var cur = value == null ? '' : String(value);
+      opts.forEach(function (o) {
+        var opt = el('option', { value: o.value, text: o.label });
+        if (String(o.value) === cur) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      if (spec.kind === 'select' && cur && !opts.some(function (o) { return String(o.value) === cur; })) {
+        var o2 = el('option', { value: cur, text: cur + ' (current)' });
+        o2.selected = true;
+        sel.insertBefore(o2, sel.firstChild);
+      }
+      sel.addEventListener('change', function () { dset(drawer.draft, spec.path, sel.value); });
+      node = el('div', { class: 'field' }, el('label', { text: spec.label }), sel,
+        spec.hint ? el('div', { class: 'hint', text: spec.hint }) : null, msg);
+      drawer.els[spec.path] = { input: sel, msg: msg };
+
+    } else if (spec.kind === 'textarea') {
+      var ta = el('textarea', { rows: 5 });
+      ta.value = value == null ? '' : String(value);
+      var cmsg = el('div', { class: 'counter' });
+      ta.addEventListener('input', function () { dset(drawer.draft, spec.path, ta.value); updateCounter(cmsg, ta.value.length, spec.counter); });
+      updateCounter(cmsg, ta.value.length, spec.counter);
+      node = el('div', { class: 'field' }, el('label', { text: spec.label }), ta, cmsg, msg);
+      drawer.els[spec.path] = { input: ta, msg: msg, counter: cmsg };
+
+    } else if (spec.kind === 'number') {
+      var nb = el('input', { type: 'number', step: 'any', min: '0' });
+      nb.value = value == null ? '' : String(value);
+      nb.addEventListener('input', function () { dset(drawer.draft, spec.path, nb.value); });
+      node = el('div', { class: 'field' }, el('label', { text: spec.label }), nb,
+        spec.hint ? el('div', { class: 'hint', text: spec.hint }) : null, msg);
+      drawer.els[spec.path] = { input: nb, msg: msg };
+
+    } else {
+      var inp = el('input', { type: 'text' });
+      inp.value = value == null ? '' : String(value);
+      if (spec.placeholder) inp.setAttribute('placeholder', spec.placeholder);
+      var cnt = spec.counter ? el('div', { class: 'counter' }) : null;
+      inp.addEventListener('input', function () {
+        dset(drawer.draft, spec.path, inp.value);
+        if (cnt) updateCounter(cnt, inp.value.length, spec.counter);
+      });
+      if (cnt) updateCounter(cnt, inp.value.length, spec.counter);
+      node = el('div', { class: 'field' }, el('label', { text: spec.label }), inp, cnt,
+        spec.hint ? el('div', { class: 'hint', text: spec.hint }) : null, msg);
+      drawer.els[spec.path] = { input: inp, msg: msg, counter: cnt };
+    }
+    return node;
+  }
+
+  function updateCounter(counterEl, len, spec) {
+    if (!counterEl || !spec) return;
+    counterEl.className = 'counter';
+    if (len > spec.hard) counterEl.className = 'counter err';
+    else if (len > spec.rec) counterEl.className = 'counter warn';
+    var txt;
+    if (len > spec.hard) txt = len + ' characters — over the ' + spec.hard + ' hard limit';
+    else if (len > spec.rec) txt = len + ' characters — over the ' + spec.rec + '-character recommendation';
+    else txt = len + ' characters (recommended ≤ ' + spec.rec + ', hard limit ' + spec.hard + ')';
+    counterEl.textContent = txt;
+  }
+
+  function buildChips(spec, values) {
+    var vals = values.slice();
+    var box = el('div', { class: 'chips-box' });
+    var input = el('input', { type: 'text', placeholder: spec.placeholder || 'Type and press Enter' });
+    box.appendChild(input);
+    var msg = el('div', { class: 'field-msg' });
+    var wrap = el('div', { class: 'field' }, el('label', { text: spec.label }), box,
+      spec.hint ? el('div', { class: 'hint', text: spec.hint }) : null, msg);
+
+    function renderChips() {
+      Array.prototype.slice.call(box.querySelectorAll('.chip-item')).forEach(function (n) { n.remove(); });
+      vals.forEach(function (v, i) {
+        var chip = el('span', { class: 'chip-item' },
+          el('span', { text: String(v) }),
+          el('button', { type: 'button', text: '×', title: 'Remove', onclick: function () { vals.splice(i, 1); commit(); } }));
+        box.insertBefore(chip, input);
+      });
+    }
+    function commit() { dset(drawer.draft, spec.path, vals.slice()); renderChips(); }
+    function addFromInput() {
+      var raw = input.value.trim().replace(/,$/, '').trim();
+      if (!raw) return;
+      if (!vals.some(function (v) { return String(v) === raw; })) vals.push(raw);
+      input.value = '';
+      commit();
+    }
+    input.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ',') { ev.preventDefault(); addFromInput(); }
+      else if (ev.key === 'Backspace' && input.value === '' && vals.length) { vals.pop(); commit(); }
+    });
+    renderChips();
+    return { node: wrap, input: input, msg: msg, flush: addFromInput };
+  }
+
+  function buildChecks(spec, values) {
+    var vals = values.slice();
+    var grid = el('div', { class: 'check-grid' });
+    var msg = el('div', { class: 'field-msg' });
+    var wrap = el('div', { class: 'field' }, el('label', { text: spec.label }), grid, msg);
+    (spec.options || []).forEach(function (opt) {
+      var cb = el('input', { type: 'checkbox' });
+      cb.checked = vals.indexOf(opt) >= 0;
+      cb.addEventListener('change', function () {
+        vals = vals.filter(function (v) { return v !== opt; });
+        if (cb.checked) vals.push(opt);
+        dset(drawer.draft, spec.path, vals.slice());
+      });
+      grid.appendChild(el('label', {}, cb, el('span', { text: opt })));
+    });
+    return { node: wrap, msg: msg };
+  }
+
+  function clearDrawerMessages() {
+    Object.keys(drawer.els).forEach(function (k) {
+      var m = drawer.els[k].msg;
+      if (m) { clearNode(m); }
+    });
+    var top = $('#drawer-top-errors');
+    if (top) clearNode(top);
+  }
+
+  function showTopErrors(list) {
+    var host = $('#drawer-top-errors');
+    if (!host) return;
+    if (!list.length) return;
+    host.appendChild(el('div', { class: 'apply-error' },
+      el('div', { text: 'Please fix the following first:' }),
+      el('ul', {}, list.map(function (er) { return el('li', { text: (er.field ? er.field + ': ' : '') + er.detail }); }))
+    ));
+  }
+
+  /* ================================================================== *
+   * save / delete
+   * ================================================================== */
+  function composeFields(entity) {
+    var fields = {};
+    SCHEMAS[entity].forEach(function (spec) {
+      var v = dget(drawer.draft, spec.path);
+      var out;
+      if (spec.kind === 'checkbox') out = v === true;
+      else if (spec.kind === 'chips' || spec.kind === 'checks') out = Array.isArray(v) ? v.slice() : [];
+      else if (spec.kind === 'number') {
+        if (v == null || String(v).trim() === '') out = '';
+        else {
+          var n = Number(String(v).trim());
+          out = isFinite(n) ? n : String(v).trim();
+        }
+      } else out = (v == null ? '' : String(v));
+      dset(fields, spec.path, out);
+    });
+    return fields;
+  }
+
+  function saveDrawer() {
+    var entity = drawer.entity;
+    var fields = composeFields(entity);
+    var problems = [];
+    if (!anyText(fields.name)) problems.push({ field: 'Name', detail: 'give it a name' });
+    if (entity === 'adset' && !anyText(fields.campaign_id)) problems.push({ field: 'Campaign', detail: 'choose the campaign it belongs to' });
+    if (entity === 'ad' && !anyText(fields.adset_id)) problems.push({ field: 'Ad set', detail: 'choose the ad set it belongs to' });
+    clearDrawerMessages();
+    if (problems.length) { showTopErrors(problems); return; }
+
+    var kind = entity === 'campaign' ? 'campaigns' : entity === 'adset' ? 'adsets' : 'ads';
+    var info = ENTITY_INFO[entity];
+
+    if (drawer.mode === 'create') {
+      var row = fields;
+      row.id = nextId(info.prefix);
+      row.task = activeTab;
+      ents(kind).push(row);
+      logAction('Created', info.label, row.id, 'ok', nameOf(row));
+      flash('ok', 'Created ' + info.label + ' “' + nameOf(row) + '”.');
+    } else {
+      var target = ents(kind).filter(function (r) { return r.id === drawer.id; })[0];
+      if (!target) { closeDrawer(); renderAll(); return; }
+      Object.keys(fields).forEach(function (k) { target[k] = fields[k]; });
+      logAction('Updated', info.label, target.id, 'ok', nameOf(target));
+      flash('ok', 'Updated ' + info.label + ' “' + nameOf(target) + '”.');
+    }
+    saveLocal();
+    closeDrawer();
+    renderAll();
+  }
+
+  function deleteButton() {
+    var armed = false, timer = null;
+    var b = el('button', { class: 'btn danger', type: 'button', text: 'Delete' });
+    b.addEventListener('click', function () {
+      if (!armed) {
+        armed = true; b.textContent = 'Click again to confirm'; b.className = 'btn danger armed';
+        timer = setTimeout(function () { armed = false; b.textContent = 'Delete'; b.className = 'btn danger'; }, 4000);
+        return;
+      }
+      clearTimeout(timer);
+      doDelete();
+    });
+    return b;
+  }
+
+  function doDelete() {
+    var entity = drawer.entity;
+    var info = ENTITY_INFO[entity];
+    var kind = entity === 'campaign' ? 'campaigns' : entity === 'adset' ? 'adsets' : 'ads';
+    var children;
+    if (entity === 'campaign') children = ents('adsets').filter(function (s) { return s.campaign_id === drawer.id; });
+    else if (entity === 'adset') children = ents('ads').filter(function (a) { return a.adset_id === drawer.id; });
+    else children = [];
+
+    if (children.length) {
+      var msg = 'Remove its ' + (entity === 'campaign' ? 'ad sets' : 'ads') + ' first — ' + children.map(nameOf).join(', ') + ' would be left hanging.';
+      clearDrawerMessages();
+      showTopErrors([{ field: '', detail: msg }]);
+      logAction('Blocked delete', info.label, drawer.id, 'blocked', msg);
+      saveLocal();
+      renderLog();
+      flash('err', 'Delete blocked: ' + msg);
+      return;
+    }
+
+    var target = ents(kind).filter(function (r) { return r.id === drawer.id; })[0];
+    var label = target ? nameOf(target) : drawer.id;
+    ents(kind).forEach(function (r, i) {
+      if (r.id === drawer.id) { ents(kind).splice(i, 1); return; }
+    });
+    logAction('Deleted', info.label, drawer.id, 'ok', label);
+    saveLocal();
+    closeDrawer();
+    renderAll();
+    flash('ok', 'Deleted ' + info.label + ' “' + label + '”.');
+  }
+
+  /* ================================================================== *
+   * log panel
+   * ================================================================== */
+  function renderLog() {
+    var host = $('#log-table');
+    clearNode(host);
+    var entries = state.log;
+    $('#log-count').textContent = entries.length ? entries.length + ' actions' : 'no actions yet';
+    if (!entries.length) {
+      host.appendChild(el('div', { class: 'empty' }, el('b', { text: 'Nothing yet' }),
+        el('span', { text: 'Everything you create, change or delete shows up here.' })));
+      return;
+    }
+    var wrap = el('div', { class: 'tbl-wrap' });
+    var t = el('table');
+    var thead = el('thead');
+    thead.appendChild(el('tr', {},
+      el('th', { text: 'Time' }), el('th', { text: 'Action' }), el('th', { text: 'Item' }), el('th', { text: 'Result' })));
+    t.appendChild(thead);
+    var tb = el('tbody');
+    entries.forEach(function (e) {
+      var tr = el('tr', { class: e.result === 'blocked' ? 'blocked' : '' });
+      tr.appendChild(el('td', { class: 'mono small', text: String(e.ts || '').slice(11, 19) }));
+      tr.appendChild(el('td', { text: String(e.action || '') + (e.entity ? ' ' + e.entity : '') }));
+      tr.appendChild(el('td', { text: String(e.detail || e.id || '') }));
+      tr.appendChild(el('td', {}, e.result === 'blocked'
+        ? el('span', { class: 'badge red', text: 'blocked' })
+        : el('span', { class: 'badge green', text: 'done' })));
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    wrap.appendChild(t);
+    host.appendChild(wrap);
+  }
+
+  /* ================================================================== *
+   * export / import / reset / print
+   * ================================================================== */
+  function exportPayload() {
+    var items = allChecks();
+    var c = counts(items);
+    var byTask = {};
+    ['T1', 'T2', 'T3'].forEach(function (t) {
+      var it = items.filter(function (i) { return i.task === t; });
+      var cc = counts(it);
+      byTask[t] = { passed: cc.passed, warned: cc.warned, failed: cc.failed, total: cc.total };
+    });
+    return {
+      candidate_code: code,
+      station: 'meta',
+      entities: state.entities,
+      validation: { passed: c.passed, failed: c.failed, items: items },
+      score: {
+        passed: c.passed,
+        warned: c.warned,
+        failed: c.failed,
+        total: c.total,
+        percent: c.total ? Math.round(100 * c.passed / c.total) : 0,
+        by_task: byTask
+      },
+      exported_at: new Date().toISOString()
+    };
+  }
+
+  function updateExportButton() {
+    var b = $('#btn-export');
+    var hard = hardLimitViolations();
+    if (hard.length) {
+      b.disabled = true;
+      b.title = 'Fix the red hard-limit creative items first — export is locked until then.';
+    } else {
+      b.disabled = false;
+      b.title = 'Downloads meta-work.json';
+    }
+  }
+
+  function doExport() {
+    if (hardLimitViolations().length) {
+      flash('err', 'Export is locked: fix the red hard-limit creative items first.');
+      return;
+    }
+    var payload = exportPayload();
+    try {
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'meta-work.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      logAction('Exported', 'station', '', 'ok', 'meta-work.json · ' + payload.score.passed + '/' + payload.score.total + ' checks passing');
+      saveLocal();
+      renderLog();
+      flash('ok', 'Downloaded meta-work.json — send that file back to your reviewer. (Screenshots: use Print / Save as PDF.)');
+    } catch (e) {
+      flash('err', 'Could not download automatically — use Print / Save as PDF, or check the browser download settings.');
+    }
+  }
+
+  function doImport(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var d = JSON.parse(String(reader.result));
+        if (!d || d.station !== 'meta' || !d.entities ||
+            !Array.isArray(d.entities.campaigns) || !Array.isArray(d.entities.adsets) || !Array.isArray(d.entities.ads)) {
+          flash('err', 'That file is not a Meta station export (meta-work.json).');
+          return;
+        }
+        var hasWork = state.entities.campaigns.length || state.entities.adsets.length || state.entities.ads.length;
+        if (hasWork && !window.confirm('Replace the work currently in this station with the imported file?')) return;
+        state.entities = { campaigns: d.entities.campaigns, adsets: d.entities.adsets, ads: d.entities.ads };
+        var maxSeq = 0;
+        ['campaigns', 'adsets', 'ads'].forEach(function (k) {
+          state.entities[k].forEach(function (r) {
+            var m = /_(\d+)$/.exec(String(r.id || ''));
+            if (m) maxSeq = Math.max(maxSeq, Number(m[1]));
+          });
+        });
+        state.seq = maxSeq;
+        if (typeof d.candidate_code === 'string' && d.candidate_code.trim()) {
+          code = d.candidate_code.trim().toUpperCase();
+          $('#code').value = code;
+          try { localStorage.setItem(CODE_KEY, code); } catch (e2) { storageOk = false; }
+          deriveBrief();
+        }
+        logAction('Imported', 'station', '', 'ok', 'meta-work.json');
+        saveLocal();
+        renderAll();
+        flash('ok', 'Imported the saved work for ' + code + '.');
+      } catch (e) {
+        flash('err', 'Could not read that file — send the meta-work.json downloaded from this station.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function wireReset() {
+    var armed = false, timer = null;
+    var b = $('#btn-reset');
+    b.addEventListener('click', function () {
+      if (!armed) {
+        armed = true;
+        b.textContent = 'Click again to reset everything';
+        b.className = 'btn danger armed';
+        timer = setTimeout(function () { armed = false; b.textContent = 'Reset station'; b.className = 'btn danger'; }, 4000);
+        return;
+      }
+      clearTimeout(timer);
+      armed = false;
+      b.textContent = 'Reset station';
+      b.className = 'btn danger';
+      state.entities = { campaigns: [], adsets: [], ads: [] };
+      state.seq = 0;
+      logAction('Reset', 'station', '', 'ok', 'cleared all work (candidate code kept)');
+      saveLocal();
+      renderAll();
+      flash('warn', 'Station reset. Your candidate code was kept.');
+    });
+  }
+
+  /* ================================================================== *
+   * boot
+   * ================================================================== */
+  function wireCodeBox() {
+    var box = $('#code');
+    box.value = code;
+    function applyCode() {
+      var v = String(box.value || '').trim().toUpperCase();
+      if (!v) v = DEFAULT_CODE;
+      if (v === code) return;
+      code = v;
+      box.value = v;
+      try { localStorage.setItem(CODE_KEY, v); } catch (e) { storageOk = false; }
+      deriveBrief();
+      saveLocal();
+      renderAll();
+    }
+    box.addEventListener('input', applyCode);
+    box.addEventListener('change', function () {
+      applyCode();
+      logAction('Changed code', 'station', '', 'ok', code);
+      saveLocal();
+      renderLog();
+    });
+  }
+
+  function wire() {
+    wireCodeBox();
+    wireReset();
+    $('#btn-export').addEventListener('click', doExport);
+    $('#btn-print').addEventListener('click', function () { window.print(); });
+    $('#btn-import').addEventListener('click', function () { $('#file-import').click(); });
+    $('#file-import').addEventListener('change', function (ev) {
+      var f = ev.target.files && ev.target.files[0];
+      if (f) doImport(f);
+      ev.target.value = '';
+    });
+    $('#log-toggle').addEventListener('click', function () {
+      var open = document.body.classList.toggle('log-open');
+      $('#log-toggle').textContent = open ? "What you've done ▾" : "What you've done ▸";
+    });
+    $('#drawer-backdrop').addEventListener('click', function () { if (drawer.open) closeDrawer(); });
+    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && drawer.open) closeDrawer(); });
+    window.addEventListener('hashchange', handleHash);
+  }
+
+  function boot() {
+    var restored = loadLocal();
+    code = readCode() || code;
+    deriveBrief();
+    wire();
+    var h = (location.hash || '').replace(/^#/, '').toUpperCase();
+    activeTab = TASKS[h] ? h : 'T1';
+    renderAll();
+    if (restored) flash('ok', 'Welcome back — your saved work was restored on this computer.');
+  }
+
+  boot();
+
+  /* small hook so the page can be checked by a reviewer or a test */
+  window.metaLab = {
+    version: 2,
+    getState: function () { return state; },
+    brief: function () { return B; },
+    checks: runChecks,
+    allChecks: allChecks,
+    exportPayload: exportPayload,
+    setTab: setTab
+  };
+})();
+</script>
+</body>
+</html>
